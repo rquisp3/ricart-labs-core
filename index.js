@@ -22,11 +22,18 @@ mongoose.connect(process.env.MONGO_URI)
     console.error('🔴 Error conectando a la base de datos:', error);
   });
 
-// 3. Tus Rutas
+// 3. Tus Rutas (Health Check)
 app.get('/', (req, res) => {
+  // mongoose.connection.readyState devuelve: 
+  // 0 = desconectado, 1 = conectado, 2 = conectando, 3 = desconectando
+  const dbState = mongoose.connection.readyState;
+  const dbStatusMessage = dbState === 1 ? 'Conectado a Atlas 🟢' : 'Desconectado 🔴';
+
   res.json({
-    status: 'online',
-    database: 'connected',
-    message: 'Ricart Labs API está operando',
+    empresa: 'Ricart Labs',
+    api_status: 'online 🚀',
+    database_status: dbStatusMessage,
+    message: 'Todos los sistemas operativos',
+    timestamp: new Date().toISOString()
   });
 });
