@@ -1,34 +1,44 @@
-require('dotenv').config();
+require('dotenv').config(); // Carga las variables del .env
 const express = require('express');
-const mongoose = require('mongoose');
+const connectDB = require('./src/core/config/db'); // Importamos la conexión
 
+// 1. Inicializar Express
 const app = express();
-const port = process.env.PORT || 3000;
 
-app.use(express.json()); 
+// 2. Middlewares Globales del Core
+app.use(express.json()); // Permite a la API recibir JSON en los body de las peticiones
 
-// 1. Conectamos a MongoDB, pero no detenemos el servidor si falla
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('🟢 Conectado exitosamente a MongoDB Atlas'))
-  .catch((error) => console.error('🔴 Error conectando a MongoDB:', error.message));
+// 3. Conectar a MongoDB Atlas
+connectDB();
 
-// 2. El servidor web SIEMPRE arranca
-app.listen(port, () => {
-  console.log(`🚀 Servidor de Ricart Labs corriendo en el puerto ${port}`);
+// ==========================================
+// 4. ENRUTAMIENTO DE PRODUCTOS (DOMINIOS)
+// ==========================================
+
+// Health Check (El que ya tienes funcionando para validar que el Core vive)
+app.get('/', (req, res) => {
+  res.status(200).json({
+    status: 'success',
+    marca: 'Ricart Labs Core',
+    mensaje: 'Sistemas operativos y en línea.',
+    timestamp: new Date()
+  });
 });
 
-// 3. Tu Health Check a prueba de balas
-app.get('/', (req, res) => {
-  const dbState = mongoose.connection.readyState;
-  let dbStatusMessage = 'Desconectado 🔴';
-  if (dbState === 1) dbStatusMessage = 'Conectado a Atlas 🟢';
-  if (dbState === 2) dbStatusMessage = 'Conectando... 🟡';
+// 🚀 RUTAS DE SAM V5 ACTIVADAS
+const samRoutes = require('./src/products/sam/routes/sam.routes');
+app.use('/api/v1/sam', samRoutes);
 
-  res.json({
-    empresa: 'Ricart Labs',
-    api_status: 'online 🚀',
-    database_status: dbStatusMessage,
-    message: 'Todos los sistemas operativos',
-    timestamp: new Date().toISOString()
-  });
+// 🚀 INICIALIZAR SERVICIOS EN SEGUNDO PLANO (CRON JOBS)
+const { initSamCrons } = require('./src/products/sam/services/sam.cron.js'); 
+initSamCrons();
+
+// ==========================================
+// 5. ARRANQUE DEL SERVIDOR
+// ==========================================
+const PORT = process.env.PORT || 3000;
+
+// Escuchamos en 0.0.0.0 para que Railway no tenga problemas de ruteo
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 [Ricart Labs] Core Server ejecutándose en el puerto ${PORT}`);
 });
