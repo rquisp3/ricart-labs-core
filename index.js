@@ -11,7 +11,17 @@ app.use(express.json()); // Permite a la API recibir JSON en los body de las pet
 app.use(cookieParser());
 
 // 3. Conectar a MongoDB Atlas
-connectDB();
+connectDB()
+  .then(() => {
+    const PORT = process.env.PORT || 3000;
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`🚀 Servidor ejecutándose en puerto ${PORT}`);
+    });
+  })
+  .catch((err) => {
+    console.error('No se pudo conectar a MongoDB', err);
+    process.exit(1);
+  });
 
 // ==========================================
 // 4. ENRUTAMIENTO DE PRODUCTOS (DOMINIOS)
@@ -20,10 +30,12 @@ connectDB();
 // Montar rutas de SAM (alertas)
 const samRoutes = require('./src/products/sam/routes/sam.routes');
 app.use('/api/v1/sam', samRoutes);
+console.log('✅ Rutas SAM montadas');
 
 // Montar rutas de autenticación
 const authRoutes = require('./src/products/sam/routes/auth.routes');
 app.use('/api/v1/auth', authRoutes);
+console.log('✅ Rutas Auth montadas');
 
 // Health check
 app.get('/', (req, res) => {
