@@ -1,0 +1,202 @@
+[
+    {
+        "ID_CAMARA": "LC001",
+        "UBICACION": "Paseo de la República (Av. Paseo de la República No. 1786 cruce con avenida Canadá)",
+        "DISTRITO": "Lince",
+        "URL_STREAM": "https:\/\/live.smartechlatam.online\/claro\/paseodelarepublica\/index.m3u8",
+        "LATITUD": -12.0819555379704,
+        "LONGITUD": -77.02713179254,
+        "PROVEEDOR": "CLARO",
+        "ESTADO": "ACTIVO"
+    },
+    {
+        "ID_CAMARA": "LC002",
+        "UBICACION": "Prolongación Tacna (Av. Prol. Tacna - Cuadra 01)",
+        "DISTRITO": "Rímac",
+        "URL_STREAM": "https:\/\/live.smartechlatam.online\/claro\/prolongaciontacna\/index.m3u8",
+        "LATITUD": -12.0381625306973,
+        "LONGITUD": -77.0318209730736,
+        "PROVEEDOR": "CLARO",
+        "ESTADO": "ACTIVO"
+    },
+    {
+        "ID_CAMARA": "LC003",
+        "UBICACION": "La Marina (Av. La Marina - Cuadra 7)",
+        "DISTRITO": "Pueblo Libre",
+        "URL_STREAM": "https:\/\/live.smartechlatam.online\/claro\/lamarina\/index.m3u8",
+        "LATITUD": -12.0824885252284,
+        "LONGITUD": -77.0688927658444,
+        "PROVEEDOR": "CLARO",
+        "ESTADO": "ACTIVO"
+    },
+    {
+        "ID_CAMARA": "LC004",
+        "UBICACION": "Av. Faustino Carrion (Av. J. F. Sanchez Carrión \/ Punta del Este)",
+        "DISTRITO": "Jesús María",
+        "URL_STREAM": "https:\/\/live.smartechlatam.online\/claro\/avfaustinocarrion\/index.m3u8",
+        "LATITUD": -12.0910725267476,
+        "LONGITUD": -77.0562733951985,
+        "PROVEEDOR": "CLARO",
+        "ESTADO": "ACTIVO"
+    },
+    {
+        "ID_CAMARA": "LC005",
+        "UBICACION": "Brasil con Javier Prado (Av. Brasil Cdra 32 \/ Javier Prado)",
+        "DISTRITO": "Magdalena",
+        "URL_STREAM": "https:\/\/live.smartechlatam.online\/claro\/brasilconjavierprado\/index.m3u8",
+        "LATITUD": -12.0896780138554,
+        "LONGITUD": -77.065791596463,
+        "PROVEEDOR": "CLARO",
+        "ESTADO": "ACTIVO"
+    },
+    {
+        "ID_CAMARA": "LC006",
+        "UBICACION": "Ejército con Salaverry (Av. Del Ejército \/ Av. Salaverry)",
+        "DISTRITO": "Magdalena",
+        "URL_STREAM": "https:\/\/live.smartechlatam.online\/claro\/ejercitoconsalaverry\/index.m3u8",
+        "LATITUD": -12.1028176504978,
+        "LONGITUD": -77.0584295962565,
+        "PROVEEDOR": "CLARO",
+        "ESTADO": "ACTIVO"
+    },
+    {
+        "ID_CAMARA": "LC007",
+        "UBICACION": "Ejército (Av. Del Ejército - Cuadra 12)",
+        "DISTRITO": "Miraflores",
+        "URL_STREAM": "https:\/\/live.smartechlatam.online\/claro\/ejercito\/index.m3u8",
+        "LATITUD": -12.110876490233,
+        "LONGITUD": -77.0506772670026,
+        "PROVEEDOR": "CLARO",
+        "ESTADO": "ACTIVO"
+    },
+    {
+        "ID_CAMARA": "LC008",
+        "UBICACION": "Ángamos (Av. Angamos Oeste Cdra 20 \/ Pje. Romano)",
+        "DISTRITO": "Surquillo",
+        "URL_STREAM": "https:\/\/live.smartechlatam.online\/claro\/angamos\/index.m3u8",
+        "LATITUD": -12.1123777275435,
+        "LONGITUD": -77.0100258505192,
+        "PROVEEDOR": "CLARO",
+        "ESTADO": "ACTIVO"
+    },
+    {
+        "ID_CAMARA": "LC009",
+        "UBICACION": "República de Panamá (Av. Rep. de Panamá Cdra 39 \/ Pje. Vicuña)",
+        "DISTRITO": "Surquillo",
+        "URL_STREAM": "https:\/\/live.smartechlatam.online\/claro\/republicapanama\/index.m3u8",
+        "LATITUD": -12.1031053541274,
+        "LONGITUD": -77.0187246999278,
+        "PROVEEDOR": "CLARO",
+        "ESTADO": "ACTIVO"
+    },
+    {
+        "ID_CAMARA": "LC010",
+        "UBICACION": "Javier Prado (Av. Javier Prado Este Cdra 45 Primax)",
+        "DISTRITO": "Surco",
+        "URL_STREAM": "https:\/\/live.smartechlatam.online\/claro\/javierprado\/index.m3u8",
+        "LATITUD": -12.0841817547122,
+        "LONGITUD": -76.9742811901723,
+        "PROVEEDOR": "CLARO",
+        "ESTADO": "ACTIVO"
+    },
+    {
+        "ID_CAMARA": "LC011",
+        "UBICACION": "Peaje Punta Negra (Km 48, Panamericana Sur)",
+        "DISTRITO": "Punta Negra",
+        "URL_STREAM": "https:\/\/live.smartechlatam.online\/claro\/domo_punta_negra\/index.m3u8",
+        "LATITUD": -12.3665600670559,
+        "LONGITUD": -76.7894219792696,
+        "PROVEEDOR": "MML",
+        "ESTADO": "ACTIVO"
+    },
+    {
+        "ID_CAMARA": "LC012",
+        "UBICACION": "Panamericana Sur (Panamericana Sur - Puente Atocongo)",
+        "DISTRITO": "Surco",
+        "URL_STREAM": "https:\/\/live.smartechlatam.online\/claro\/panamericana\/index.m3u8",
+        "LATITUD": -12.1496604036327,
+        "LONGITUD": -76.9831809503406,
+        "PROVEEDOR": "CLARO",
+        "ESTADO": "ACTIVO"
+    },
+    {
+        "ID_CAMARA": "LC013",
+        "UBICACION": "Panamericana Sur Peaje 1 (Peaje Villa Km. 19.5 Pan. Sur)",
+        "DISTRITO": "Villa El Salvador",
+        "URL_STREAM": "https:\/\/live.smartechlatam.online\/claro\/panamericana_peaje1\/index.m3u8",
+        "LATITUD": -12.2277965011254,
+        "LONGITUD": -76.9693556018426,
+        "PROVEEDOR": "CLARO",
+        "ESTADO": "ACTIVO"
+    },
+    {
+        "ID_CAMARA": "LC014",
+        "UBICACION": "Peaje Plaza Villa (Km 30, Panamericana Sur)",
+        "DISTRITO": "Villa El Salvador",
+        "URL_STREAM": "https:\/\/live.smartechlatam.online\/claro\/plaza_villa\/index.m3u8",
+        "LATITUD": -12.227293885467,
+        "LONGITUD": -76.9703732595502,
+        "PROVEEDOR": "MML",
+        "ESTADO": "ACTIVO"
+    },
+    {
+        "ID_CAMARA": "LC015",
+        "UBICACION": "Epass Villa (Km 30, Panamericana Sur)",
+        "DISTRITO": "Villa El Salvador",
+        "URL_STREAM": "https:\/\/live.smartechlatam.online\/claro\/epass_villa\/index.m3u8",
+        "LATITUD": -12.2544464787347,
+        "LONGITUD": -76.9247645082761,
+        "PROVEEDOR": "MML",
+        "ESTADO": "ACTIVO"
+    },
+    {
+        "ID_CAMARA": "LC016",
+        "UBICACION": "Derby (Av. El Derby \/ Puerta 3 Jockey Club)",
+        "DISTRITO": "Surco",
+        "URL_STREAM": "https:\/\/live.smartechlatam.online\/claro\/derby\/index.m3u8",
+        "LATITUD": -12.092651164585,
+        "LONGITUD": -76.9803607955673,
+        "PROVEEDOR": "CLARO",
+        "ESTADO": "ACTIVO"
+    },
+    {
+        "ID_CAMARA": "LC017",
+        "UBICACION": "Domo Quebrada Seca (Km 40, Panamericana Sur",
+        "DISTRITO": "Punta Hermosa",
+        "URL_STREAM": "https:\/\/live.smartechlatam.online\/claro\/domo_quebrada_seca\/index.m3u8",
+        "LATITUD": -12.23544257295,
+        "LONGITUD": -76.9575497005225,
+        "PROVEEDOR": "MML",
+        "ESTADO": "ACTIVO"
+    },
+    {
+        "ID_CAMARA": "LC018",
+        "UBICACION": "Paradero Gallinazos (Km 26+800, Panamericana Norte)",
+        "DISTRITO": "Puente Piedra",
+        "URL_STREAM": "https:\/\/live.smartechlatam.online\/claro\/gallinazos\/index.m3u8",
+        "LATITUD": -11.8920705472748,
+        "LONGITUD": -77.0682806855445,
+        "PROVEEDOR": "MML",
+        "ESTADO": "ACTIVO"
+    },
+    {
+        "ID_CAMARA": "LC019",
+        "UBICACION": "Paradero Escuela PNP (Km 26+300, Panamericana Norte, Puente Piedra)",
+        "DISTRITO": "Puente Piedra",
+        "URL_STREAM": "https:\/\/live.smartechlatam.online\/claro\/escuela_pnp\/index.m3u8",
+        "LATITUD": -11.8959506091545,
+        "LONGITUD": -77.0680995996903,
+        "PROVEEDOR": "MML",
+        "ESTADO": "ACTIVO"
+    },
+    {
+        "ID_CAMARA": "LC020",
+        "UBICACION": "Óvalo de Miraflores (Acceso Av. Arequipa)",
+        "DISTRITO": "Miraflores",
+        "URL_STREAM": "https:\/\/hd-auth.skylinewebcams.com\/live.m3u8?a=lv1aqgqos9kh2l5rhcvj0j0f34",
+        "LATITUD": -12.1195663313873,
+        "LONGITUD": -77.0293667612198,
+        "PROVEEDOR": "SKYLINE",
+        "ESTADO": "ACTIVO"
+    }
+]

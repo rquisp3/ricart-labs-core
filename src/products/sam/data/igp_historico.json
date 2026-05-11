@@ -1,0 +1,202 @@
+[
+    {
+        "IDReporte": "2026-0264",
+        "FechaYHora": 46331.36871527778,
+        "Magnitud": 4.5,
+        "Profundidad": "40km",
+        "Intensidad": "III-IV Sullana",
+        "Referencia": "11 km al SO de Sullana, Sullana - Piura",
+        "Latitud": -4.96,
+        "Longitud": -80.77
+    },
+    {
+        "IDReporte": "2026-0263",
+        "FechaYHora": 46300.68035879629,
+        "Magnitud": 3.9,
+        "Profundidad": "49km",
+        "Intensidad": "II-III Picota",
+        "Referencia": "43 km al E de Picota, Picota - San Martín",
+        "Latitud": -7.04,
+        "Longitud": -75.96
+    },
+    {
+        "IDReporte": "2026-0262",
+        "FechaYHora": 46300.36864583333,
+        "Magnitud": 4.2,
+        "Profundidad": "50km",
+        "Intensidad": "II-III Palpa",
+        "Referencia": "54 km al SO de Palpa, Palpa - Ica",
+        "Latitud": -14.84,
+        "Longitud": -75.57
+    },
+    {
+        "IDReporte": "2026-0261",
+        "FechaYHora": 46300.34428240741,
+        "Magnitud": 3.5,
+        "Profundidad": "22km",
+        "Intensidad": "III Yauca",
+        "Referencia": "10 km al NO de Yauca, Caravelí - Arequipa",
+        "Latitud": -15.61,
+        "Longitud": -74.6
+    },
+    {
+        "IDReporte": "2026-0260",
+        "FechaYHora": 46239.53480324074,
+        "Magnitud": 4.3,
+        "Profundidad": "22km",
+        "Intensidad": "III Santa María de Nieva",
+        "Referencia": "22 km al NE de Santa María de Nieva, Condorcanqui - Amazonas",
+        "Latitud": -4.43,
+        "Longitud": -77.76
+    },
+    {
+        "IDReporte": "2026-0259",
+        "FechaYHora": 46239.510150462964,
+        "Magnitud": 4.9,
+        "Profundidad": "34km",
+        "Intensidad": "III-IV San Juan de Marcona",
+        "Referencia": "72 km al O de San Juan de Marcona, Nasca - Ica",
+        "Latitud": -15.17,
+        "Longitud": -75.81
+    },
+    {
+        "IDReporte": "2026-0258",
+        "FechaYHora": 46239.44605324074,
+        "Magnitud": 4,
+        "Profundidad": "36km",
+        "Intensidad": "No reportada",
+        "Referencia": "80 km al O de San Juan de Marcona, Nasca - Ica",
+        "Latitud": -15.2,
+        "Longitud": -75.89
+    },
+    {
+        "IDReporte": "2026-0257",
+        "FechaYHora": 46208.299780092595,
+        "Magnitud": 4,
+        "Profundidad": "37km",
+        "Intensidad": "II-III Palpa",
+        "Referencia": "39 km al SO de Palpa, Palpa - Ica",
+        "Latitud": -14.84,
+        "Longitud": -75.37
+    },
+    {
+        "IDReporte": "2026-0256",
+        "FechaYHora": 46178.57020833333,
+        "Magnitud": 3.5,
+        "Profundidad": "39km",
+        "Intensidad": "II-III Mollendo",
+        "Referencia": "11 km al NE de Mollendo, Islay - Arequipa",
+        "Latitud": -16.94,
+        "Longitud": -71.97
+    },
+    {
+        "IDReporte": "2026-0255",
+        "FechaYHora": 46178.10091435185,
+        "Magnitud": 3.5,
+        "Profundidad": "36km",
+        "Intensidad": "II-III Comunidad Camisea",
+        "Referencia": "23 km al O de Comunidad Camisea, La Convención - Cusco",
+        "Latitud": -11.68,
+        "Longitud": -73.15
+    },
+    {
+        "IDReporte": "2026-0254",
+        "FechaYHora": 46147.48025462963,
+        "Magnitud": 4.2,
+        "Profundidad": "152km",
+        "Intensidad": "No reportada",
+        "Referencia": "44 km al SO de Barranca, Datem del Marañón - Loreto",
+        "Latitud": -5,
+        "Longitud": -77.04
+    },
+    {
+        "IDReporte": "2026-0253",
+        "FechaYHora": 46147.457233796296,
+        "Magnitud": 5,
+        "Profundidad": "55km",
+        "Intensidad": "III-IV Zorritos",
+        "Referencia": "13 km al NE de Zorritos, Contralmirante Villar - Tumbes",
+        "Latitud": -3.56,
+        "Longitud": -80.61
+    },
+    {
+        "IDReporte": "2026-0252",
+        "FechaYHora": 46147.321851851855,
+        "Magnitud": 3.4,
+        "Profundidad": "16km",
+        "Intensidad": "II-III Santa Lucía",
+        "Referencia": "13 km al SE de Santa Lucía, Lampa - Puno",
+        "Latitud": -15.8,
+        "Longitud": -70.55
+    },
+    {
+        "IDReporte": "2026-0251",
+        "FechaYHora": 46117.035474537035,
+        "Magnitud": 4,
+        "Profundidad": "21km",
+        "Intensidad": "No reportada",
+        "Referencia": "182 km al SO de Huarmey, Huarmey - Áncash",
+        "Latitud": -11.16,
+        "Longitud": -79.39
+    },
+    {
+        "IDReporte": "2026-0250",
+        "FechaYHora": 46117.0059375,
+        "Magnitud": 4.1,
+        "Profundidad": "62km",
+        "Intensidad": "No reportada",
+        "Referencia": "16 km al SE de Yauca, Caravelí - Arequipa",
+        "Latitud": -15.78,
+        "Longitud": -74.45
+    },
+    {
+        "IDReporte": "2026-0249",
+        "FechaYHora": 46086.91967592593,
+        "Magnitud": 3.4,
+        "Profundidad": "12km",
+        "Intensidad": "II Panao",
+        "Referencia": "23 km al E de Panao, Pachitea - Huánuco",
+        "Latitud": -9.94,
+        "Longitud": -75.79
+    },
+    {
+        "IDReporte": "2026-0248",
+        "FechaYHora": 46086.138819444444,
+        "Magnitud": 3.4,
+        "Profundidad": "9km",
+        "Intensidad": "II Calacoa",
+        "Referencia": "6 km al E de Calacoa, Mariscal Nieto - Moquegua",
+        "Latitud": -16.74,
+        "Longitud": -70.63
+    },
+    {
+        "IDReporte": "2026-0247",
+        "FechaYHora": 46058.14077546296,
+        "Magnitud": 4,
+        "Profundidad": "75km",
+        "Intensidad": "No reportada",
+        "Referencia": "59 km al NO de San Juan, Nasca - Ica",
+        "Latitud": -14.75,
+        "Longitud": -75.7
+    },
+    {
+        "IDReporte": "2026-0246",
+        "FechaYHora": 46027.94886574074,
+        "Magnitud": 3.5,
+        "Profundidad": "16km",
+        "Intensidad": "II-III Santa Lucía",
+        "Referencia": "30 km al SO de Santa Lucía, Lampa - Puno",
+        "Latitud": -15.88,
+        "Longitud": -70.81
+    },
+    {
+        "IDReporte": "2026-0245",
+        "FechaYHora": 46027.786041666666,
+        "Magnitud": 4,
+        "Profundidad": "25km",
+        "Intensidad": "II Mollendo",
+        "Referencia": "67 km al SO de Mollendo, Islay - Arequipa",
+        "Latitud": -17.34,
+        "Longitud": -72.55
+    }
+]

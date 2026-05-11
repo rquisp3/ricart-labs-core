@@ -1,18 +1,16 @@
-const axios = require('axios');
+const puppeteer = require('puppeteer');
 const cheerio = require('cheerio');
 const CgbvpAlert = require('../../models/CgbvpAlert');
 
-// Función auxiliar para convertir la fecha de los bomberos a formato nativo
+// Función auxiliar para parsear la fecha (formato: 11/05/2026 08:56:22 a.m.)
 const parseFechaBomberos = (fechaStr) => {
   try {
-    // Busca el formato exacto: 24/05/2026 10:30:00 p.m.
     const regex = /(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2}):(\d{2})\s+([ap]\.?m\.?)/i;
     const match = fechaStr.match(regex);
-    if (!match) return new Date(); // Si falla, usa la hora actual como salvavidas
+    if (!match) return new Date(); // fallback a fecha actual
 
     let [_, dd, mm, yyyy, hh, min, ss, ampm] = match;
     let hora = parseInt(hh, 10);
-    
     if (ampm.toLowerCase().includes('p') && hora < 12) hora += 12;
     if (ampm.toLowerCase().includes('a') && hora === 12) hora = 0;
     
@@ -23,123 +21,105 @@ const parseFechaBomberos = (fechaStr) => {
 };
 
 const syncBomberos = async () => {
-  console.log('🚒 [CGBVP] Radar escaneando emergencias...');  
+  console.log('🚒 [CGBVP] Iniciando scraping con Puppeteer...');
+  const browser = await puppeteer.launch({
+    headless: 'new',
+    args: ['--no-sandbox', '--disable-setuid-sandbox']
+  });
+
   try {
-    // 1. EL CACHE-BUSTER (Tu técnica original, intacta)
-    const url = `https://sgonorte.bomberosperu.gob.pe/24horas/?t=${new Date().getTime()}`;
-    
-    // CAMUFLAJE AVANZADO: Simulamos ser un navegador real al 100%
-    const respuesta = await axios.get(url, {
-      headers: { 
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-        'Accept-Language': 'en-US,en;q=0.5',
-        'Accept-Encoding': 'gzip, deflate, br',
-        'DNT': '1',
-        'Connection': 'keep-alive',
-        'Upgrade-Insecure-Requests': '1',
-        'Sec-Fetch-Dest': 'document',
-        'Sec-Fetch-Mode': 'navigate',
-        'Sec-Fetch-Site': 'none',
-        'Sec-Fetch-User': '?1'
-      },
-      timeout: 30000,
-      validateStatus: () => true 
+    const page = await browser.newPage();
+    await page.setUserAgent(
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36'
+    );
+    await page.setExtraHTTPHeaders({
+      'accept-language': 'es-419,es-US;q=0.9,es;q=0.8'
     });
 
-    const data = respuesta.data;
+    // Navegar a la página
+    await page.goto('https://sgonorte.bomberosperu.gob.pe/24horas/', {
+      waitUntil: 'networkidle2',
+      timeout: 60000
+    });
 
-    // 2. EL ESCUDO ANTI-VACÍOS (AHORA CON MODO ESPÍA)
-    if (!data || data.length < 1000) {
-      console.warn("⚠️ [CGBVP] La web no devolvió contenido válido. Abortando sincronización.");
-      console.log(`🔍 [DEBUG CGBVP] Status Code: ${respuesta.status}`);
-      // Imprimimos los primeros 300 caracteres para ver si es Cloudflare, un error de base de datos o qué.
-      console.log(`🔍 [DEBUG CGBVP] Respuesta del servidor:`, String(data).substring(0, 300));
-      return;
-    }
+    await page.waitForSelector('.card.shadow', { timeout: 15000 });
+    const html = await page.content();
 
-    // 3. MOTOR DE EXTRACCIÓN (Usando Cheerio)
-    const $ = cheerio.load(data);
-    const tarjetas = $('.card.shadow').toArray();
-    
+    // Dividir en tarjetas usando la misma técnica del GAS original (regex)
+    const tarjetasHtml = html.split(/<div class="card shadow/i);
+    tarjetasHtml.shift(); // Descartar lo que está antes del primer div.card
+
+    console.log(`📋 [CGBVP] Tarjetas encontradas: ${tarjetasHtml.length}`);
+
     let nuevas = 0;
     let actualizadas = 0;
 
-    for (const el of tarjetas) {
-      const card = $(el);
-      
-      // -- Nro Parte --
-      const headerText = card.find('.card-header').text();
-      const nroParteMatch = headerText.match(/Parte:\s*(\d+)/i);
-      if (!nroParteMatch) continue; // Si no hay parte, saltamos a la siguiente
-      
+    for (const tarjetaHtml of tarjetasHtml) {
+      // Reconstruir el div para Cheerio
+      const $ = cheerio.load(`<div class="card shadow ${tarjetaHtml}`);
+
+      // 1. Nro Parte: regex sobre todo el HTML
+      const nroParteMatch = tarjetaHtml.match(/Parte:\s*(\d+)/i);
+      if (!nroParteMatch) continue;
       const nroParte = nroParteMatch[1].trim();
 
-      // -- Tipo de Emergencia --
-      const tipoEmergencia = card.find('h5').text().replace(/#\d+/, '').trim() || 'NO ESPECIFICADO';
-      
-      // -- Estado --
-      const estado = card.find('h6').text().trim().toUpperCase() || 'ATENDIENDO';
-      
-      // -- Fecha --
-      // Los bomberos suelen poner la fecha mezclada en el HTML, buscamos con tu Regex
-      const htmlCompleto = card.html();
-      const fechaMatch = htmlCompleto.match(/(\d{2}\/\d{2}\/\d{4}\s+\d{2}:\d{2}:\d{2}\s+[ap]\.?m\.?)/i);
+      // 2. Tipo de Emergencia: texto del h5, eliminar prefijo #número
+      let tipoEmergencia = $('h5').text().replace(/#\d+/, '').trim() || 'NO ESPECIFICADO';
+
+      // 3. Estado: texto del h6 en mayúsculas
+      const estado = $('h6').text().trim().toUpperCase() || 'ATENDIENDO';
+
+      // 4. Fecha y Hora: regex específico (dd/mm/aaaa hh:mm:ss a.m./p.m.)
+      const fechaMatch = tarjetaHtml.match(/(\d{2}\/\d{2}\/\d{4}\s+\d{2}:\d{2}:\d{2}\s+[ap]\.?m\.?)/i);
       const fechaObj = fechaMatch ? parseFechaBomberos(fechaMatch[1]) : new Date();
 
-      // -- Dirección y Coordenadas --
-      const dirText = card.find('p.card-text.m-0').text().trim();
-      const coordMatch = dirText.match(/\(([-0-9.]+),\s*([-0-9.]+)\)/);
-      
+      // 5. Dirección y Coordenadas: p.card-text.m-0 contiene la dirección y (lat,lon)
+      let dirText = $('p.card-text.m-0').text().trim();
       let lat = 0, lon = 0;
-      let direccionLimpia = dirText;
-
+      const coordMatch = dirText.match(/\(([-0-9.]+),\s*([-0-9.]+)\)/);
       if (coordMatch) {
         lat = parseFloat(coordMatch[1]);
         lon = parseFloat(coordMatch[2]);
-        direccionLimpia = dirText.replace(coordMatch[0], "").replace(/\s{2,}/g, " ").trim();
+        // Limpiar la dirección quitando las coordenadas y espacios dobles
+        dirText = dirText.replace(coordMatch[0], '').replace(/\s{2,}/g, ' ').trim();
       }
 
-      // -- Máquinas (Ahora extraemos a un Array real de Mongoose) --
+      // 6. Máquinas: spans dentro de .emergencia-item
       const maquinas = [];
-      card.find('span.emergencia-item span').each((i, span) => {
-        const nomMaquina = $(span).text().trim();
-        if (nomMaquina) maquinas.push(nomMaquina);
+      $('span.emergencia-item span').each((i, el) => {
+        const nombre = $(el).text().trim();
+        if (nombre) maquinas.push(nombre);
       });
 
-      // 4. LÓGICA DE BASE DE DATOS (Crear o Actualizar)
+      // 7. Persistencia en MongoDB
       const existe = await CgbvpAlert.findOne({ nroParte });
 
       if (!existe) {
-        // Alerta Nueva: La guardamos
+        // Nueva emergencia
         await CgbvpAlert.create({
           nroParte,
           fechaHora: fechaObj,
           tipoEmergencia,
           estado,
-          direccion: direccionLimpia,
-          location: { 
-            type: 'Point', 
-            coordinates: [lon, lat] // Recuerda: Mongo usa [Longitud, Latitud]
+          direccion: dirText,
+          location: {
+            type: 'Point',
+            coordinates: [lon, lat] // [longitud, latitud] para GeoJSON
           },
           maquinas
         });
         nuevas++;
       } else {
-        // Alerta Existente: Verificamos si cambió de estado o llegaron más máquinas
+        // Verificar cambios
         let huboCambios = false;
-        
         if (existe.estado !== estado) {
           existe.estado = estado;
           huboCambios = true;
         }
-        
-        // Si hay un número distinto de máquinas, actualizamos el array
         if (existe.maquinas.length !== maquinas.length) {
           existe.maquinas = maquinas;
           huboCambios = true;
         }
-
         if (huboCambios) {
           await existe.save();
           actualizadas++;
@@ -147,13 +127,12 @@ const syncBomberos = async () => {
       }
     }
 
-    // 5. REPORTE EN CONSOLA
-    if (nuevas > 0 || actualizadas > 0) {
-      console.log(`🟢 [CGBVP] Operación exitosa. Nuevas: ${nuevas} | Actualizadas: ${actualizadas}`);
-    }
-
+    console.log(`🟢 [CGBVP] Sincronización completada. Nuevas: ${nuevas} | Actualizadas: ${actualizadas}`);
   } catch (error) {
-    console.error(`🔴 [CGBVP] Error Crítico de Scraper: ${error.message}`);
+    console.error(`🔴 [CGBVP] Error crítico: ${error.message}`);
+  } finally {
+    await browser.close();
+    console.log('🔒 [CGBVP] Navegador cerrado.');
   }
 };
 

@@ -1,0 +1,142 @@
+[
+    {
+        "Codigo": "SEDE-0001",
+        "Sede": "DT OQUENDO",
+        "Dirección": "Av. Oquendo y Calle 9 – Callao ",
+        "Negocio": "DTE",
+        "Coordenadas": "-11.977180891342536, -77.12931590035963"
+    },
+    {
+        "Codigo": "SEDE-0002",
+        "Sede": "DARKSTORE'S ATE",
+        "Dirección": "Av. Huarochiri 1107 - Ate",
+        "Negocio": "EC@",
+        "Coordenadas": "-12.06076840954416, -76.94191881716606"
+    },
+    {
+        "Codigo": "SEDE-0003",
+        "Sede": "DARKSTORE'S CHORRILLOS",
+        "Dirección": "Av. Defensores del morro 2201 - Chorrillos",
+        "Negocio": "EC@",
+        "Coordenadas": "-12.180877732448195, -77.01261742434808"
+    },
+    {
+        "Codigo": "SEDE-0004",
+        "Sede": "DARKSTORE'S SAN MIGUEL I",
+        "Dirección": "Calle Martín Murúa 185 - San Miguel",
+        "Negocio": "EC@",
+        "Coordenadas": "-12.076185243928828, -77.09136669367119"
+    },
+    {
+        "Codigo": "SEDE-0005",
+        "Sede": "DARKSTORE'S SAN MIGUEL II",
+        "Dirección": "Calle Martín Murúa 189 - San Miguel",
+        "Negocio": "EC@",
+        "Coordenadas": "-12.076197046764497, -77.09137675195477"
+    },
+    {
+        "Codigo": "SEDE-0006",
+        "Sede": "FAUCETT",
+        "Dirección": "Av. Elmer Faucett Cdra. 3040 – Callao",
+        "Negocio": "MCI",
+        "Coordenadas": "-12.025293245379682, -77.10402662267104"
+    },
+    {
+        "Codigo": "SEDE-0007",
+        "Sede": "MOTOREX - INSOURCING",
+        "Dirección": "Av. Argentina cruce con Av. Minerales – Callao",
+        "Negocio": "MCI",
+        "Coordenadas": "-12.047201726175913, -77.07940394873934"
+    },
+    {
+        "Codigo": "SEDE-0008",
+        "Sede": "PERUBAR - INSOURCING",
+        "Dirección": "Av. Nestor Gambetta 983 - Callao",
+        "Negocio": "MCI",
+        "Coordenadas": "-12.042518172725629, -77.12685220294395"
+    },
+    {
+        "Codigo": "SEDE-0009",
+        "Sede": "PRIMAX - INSOURCING",
+        "Dirección": "Av. Argentina 1927 - Cercado De Lima",
+        "Negocio": "MCI",
+        "Coordenadas": "-12.045756592213444, -77.06590757902677"
+    },
+    {
+        "Codigo": "SEDE-0010",
+        "Sede": "TAMBOMACHAY",
+        "Dirección": "Calle Los Cedro 158 - Callao",
+        "Negocio": "MCI",
+        "Coordenadas": "-12.005318446390532, -77.11316580961973"
+    },
+    {
+        "Codigo": "SEDE-0011",
+        "Sede": "SIDER AQP",
+        "Dirección": "Vía de Evitamiento, Irrigación el Cural, Sección E, Lateral 2, Sub-Lote 1, Distrito de Cerro Colorado - Arequipa.",
+        "Negocio": "MCI",
+        "Coordenadas": "-16.40567508128486, -71.58875319105037"
+    },
+    {
+        "Codigo": "SEDE-0012",
+        "Sede": "SIEMENS OQUENDO",
+        "Dirección": "Av. Oquendo Mz.B - Lt.1 - Callao",
+        "Negocio": "MCI",
+        "Coordenadas": "-11.966413515437342, -77.12929050494222"
+    },
+    {
+        "Codigo": "SEDE-0013",
+        "Sede": "ALDEAS 1 - EFILA",
+        "Dirección": "Mz. C8, Tablada de Lurín - Villa El Salvador",
+        "Negocio": "RCB",
+        "Coordenadas": "-12.218222362696483, -76.96568560079805"
+    },
+    {
+        "Codigo": "SEDE-0014",
+        "Sede": "ALDEAS 4 - ADIDAS",
+        "Dirección": "Calle Arriba Perú S\/N, Tablada de Lurín - Villa El Salvador",
+        "Negocio": "RCB",
+        "Coordenadas": "-12.218068786764242, -76.96273824312549"
+    },
+    {
+        "Codigo": "SEDE-0015",
+        "Sede": "ALDEAS 5 - TPSA \/ EFILA",
+        "Dirección": "Av. César Vallejo S\/N - Villa El Salvador",
+        "Negocio": "RCB",
+        "Coordenadas": "-12.218987951942768, -76.96166885538518"
+    },
+    {
+        "Codigo": "SEDE-0016",
+        "Sede": "ALDEAS 8 - PEPSICO",
+        "Dirección": "Av. César Vallejo Mz F Lote 5 - Villa El Salvador",
+        "Negocio": "RCB",
+        "Coordenadas": "-12.221843069104548, -76.96000559577313"
+    },
+    {
+        "Codigo": "SEDE-0017",
+        "Sede": "ALDEAS 9 - HIRAOKA",
+        "Dirección": "Coop. Las Vertientes, Mz F Lt 2 - Villa El Salvador",
+        "Negocio": "RCB",
+        "Coordenadas": "-12.214630655720192, -76.96961186976074"
+    },
+    {
+        "Codigo": "SEDE-0018",
+        "Sede": "HUACHIPA",
+        "Dirección": "Av. Los Tucanes S\/N Lt. 1,2,3 y 4A Ex Fundo Pedreros - Huachipa - Lurigancho",
+        "Negocio": "RCB",
+        "Coordenadas": "-12.010979725297398, -76.9467659849656"
+    },
+    {
+        "Codigo": "SEDE-0019",
+        "Sede": "VILLA EL SALVADOR",
+        "Dirección": "Calle 3 Lote 13 Asoc. Agrop. Villa Rica de la Tablada de Lurín – Villa El Salvador",
+        "Negocio": "RCB",
+        "Coordenadas": "-12.215978852681472, -76.96091234210678"
+    },
+    {
+        "Codigo": "SEDE-0020",
+        "Sede": "OFICINAS RAMBLA",
+        "Dirección": "Calle Doménico Morelli 110 - San Borja",
+        "Negocio": "ADM",
+        "Coordenadas": "-12.088844485859212, -77.00437484480257"
+    }
+]

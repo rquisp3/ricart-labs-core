@@ -8,16 +8,16 @@ const initSamCrons = () => {
   console.log('⏳ [SAM] Inicializando Radares Tácticos...');
 
   // Radar IGP: Cada 1 minutos
-  // cron.schedule('*/1 * * * *', () => syncIgp());
+  cron.schedule('*/1 * * * *', () => syncIgp());
 
   // Radar Bomberos: Cada 2 minutos
-  // cron.schedule('*/2 * * * *', () => syncBomberos());
+  cron.schedule('*/3 * * * *', () => syncBomberos());
   
   // Radar SUTRAN: Cada 15 minutos
-  // cron.schedule('*/15 * * * *', () => syncSutran());
+  cron.schedule('*/15 * * * *', () => syncSutran());
   
   // Radar DICAPI: Cada hora (en el minuto 0)
-  // cron.schedule('0 * * * *', () => syncDicapi());
+  cron.schedule('0 * * * *', () => syncDicapi());
 
   // Disparo inicial forzado
   syncIgp();
