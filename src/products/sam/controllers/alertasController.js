@@ -1,40 +1,77 @@
-const IgpAlert = require('../models/IgpAlert');
-const CgbvpAlert = require('../models/CgbvpAlert');
-const SutranAlert = require('../models/SutranAlert');
-const DicapiPort = require('../models/DicapiPort');
+const alertService = require('../services/alertService');
 
-// Controlador para obtener un resumen rápido para el Dashboard
-const getDashboardSummary = async (req, res) => {
+// GET /alertas/todas → equivalente a obtenerDatosCompletos()
+const getAlertasCompletas = async (req, res) => {
   try {
-    // Ejecutamos todas las consultas a la base de datos EN PARALELO
-    const [sismos, bomberos, carreteras, puertos] = await Promise.all([
-      IgpAlert.find().sort({ fechaHora: -1 }).limit(10), // Últimos 10 sismos
-      CgbvpAlert.find({ estado: 'ATENDIENDO' }).sort({ fechaHora: -1 }).limit(20), // Alertas activas
-      SutranAlert.find().sort({ createdAt: -1 }).limit(15),
-      DicapiPort.find({ estadoLogistico: { $ne: 'ABIERTO' } }) // Puertos con problemas
-    ]);
-
-    // Devolvemos un JSON estructurado y limpio
-    res.status(200).json({
-      success: true,
-      timestamp: new Date(),
-      data: {
-        sismos,
-        bomberos,
-        carreteras,
-        puertos
-      }
-    });
+    const datos = await alertService.obtenerDatosCompletos();
+    res.json({ success: true, timestamp: new Date(), data: datos });
   } catch (error) {
-    console.error('🔴 Error obteniendo datos del dashboard:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error interno del servidor al obtener alertas',
-      error: error.message
-    });
+    console.error('Error en getAlertasCompletas:', error);
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
+// GET /alertas/sismos
+const getSismos = async (req, res) => {
+  try {
+    const sismos = await alertService.obtenerSismos();
+    res.json({ success: true, data: sismos });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// GET /alertas/carreteras
+const getCarreteras = async (req, res) => {
+  try {
+    const carreteras = await alertService.obtenerCarreteras();
+    res.json({ success: true, data: carreteras });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// GET /alertas/bomberos
+const getBomberos = async (req, res) => {
+  try {
+    const bomberos = await alertService.obtenerBomberos();
+    res.json({ success: true, data: bomberos });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// GET /alertas/puertos
+const getPuertos = async (req, res) => {
+  try {
+    const puertos = await alertService.obtenerPuertos();
+    res.json({ success: true, data: puertos });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// GET /alertas/sedes
+const getSedes = async (req, res) => {
+  try {
+    const sedes = await alertService.obtenerSedes();
+    res.json({ success: true, data: sedes });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// POST /cecom/registrar (pendiente hasta tener el modelo)
+const registrarCecom = async (req, res) => {
+  res.status(501).json({ success: false, message: 'Endpoint CECOM aún no implementado.' });
+};
+
 module.exports = {
-  getDashboardSummary
+  getAlertasCompletas,
+  getSismos,
+  getCarreteras,
+  getBomberos,
+  getPuertos,
+  getSedes,
+  registrarCecom,
 };

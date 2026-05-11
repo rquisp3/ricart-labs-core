@@ -1,5 +1,6 @@
 require('dotenv').config(); // Carga las variables del .env
 const express = require('express');
+const cookieParser = require('cookie-parser');
 const connectDB = require('./src/core/config/db'); // Importamos la conexión
 
 // 1. Inicializar Express
@@ -7,6 +8,7 @@ const app = express();
 
 // 2. Middlewares Globales del Core
 app.use(express.json()); // Permite a la API recibir JSON en los body de las peticiones
+app.use(cookieParser());
 
 // 3. Conectar a MongoDB Atlas
 connectDB();
@@ -15,22 +17,21 @@ connectDB();
 // 4. ENRUTAMIENTO DE PRODUCTOS (DOMINIOS)
 // ==========================================
 
-// Health Check (El que ya tienes funcionando para validar que el Core vive)
-app.get('/', (req, res) => {
-  res.status(200).json({
-    status: 'success',
-    marca: 'Ricart Labs Core',
-    mensaje: 'Sistemas operativos y en línea.',
-    timestamp: new Date()
-  });
-});
-
-// 🚀 RUTAS DE SAM V5 ACTIVADAS
+// Montar rutas de SAM (alertas)
 const samRoutes = require('./src/products/sam/routes/sam.routes');
 app.use('/api/v1/sam', samRoutes);
 
-// 🚀 INICIALIZAR SERVICIOS EN SEGUNDO PLANO (CRON JOBS)
-const { initSamCrons } = require('./src/products/sam/services/sam.cron.js'); 
+// Montar rutas de autenticación
+const authRoutes = require('./src/products/sam/routes/auth.routes');
+app.use('/api/v1/auth', authRoutes);
+
+// Health check
+app.get('/', (req, res) => {
+  res.json({ status: 'success', marca: 'Ricart Labs Core', timestamp: new Date() });
+});
+
+// Iniciar cron jobs
+const { initSamCrons } = require('./src/products/sam/services/sam.cron.js');
 initSamCrons();
 
 // ==========================================

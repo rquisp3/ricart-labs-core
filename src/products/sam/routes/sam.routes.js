@@ -1,9 +1,21 @@
 const express = require('express');
 const router = express.Router();
-const alertasController = require('../controllers/alertasController');
+const ctrl = require('../controllers/alertasController');
 
-// Ruta GET para el resumen del dashboard
-// Al acceder a esta ruta, se ejecuta el controlador que creamos arriba
-router.get('/dashboard', alertasController.getDashboardSummary);
+// Ruta raíz de SAM: datos completos
+router.get('/alertas/todas', ctrl.getAlertasCompletas);
+
+// Rutas individuales
+router.get('/alertas/sismos', ctrl.getSismos);
+router.get('/alertas/carreteras', ctrl.getCarreteras);
+router.get('/alertas/bomberos', ctrl.getBomberos);
+router.get('/alertas/puertos', ctrl.getPuertos);
+router.get('/alertas/sedes', ctrl.getSedes);
+
+//test
+router.get('/ping', (req, res) => res.json({ ping: 'ok' }));
+
+// CECOM (registro manual)
+router.post('/cecom/registrar', ctrl.registrarCecom);
 
 module.exports = router;
