@@ -146,6 +146,23 @@ const obtenerSedes = async () => {
   return formatearSedes(docs);
 };
 
+// Obtener cámaras activas
+const obtenerCamaras = async () => {
+  const LiveCam = require('../models/LiveCams'); // Asegúrate de que el archivo se llame LiveCams.js
+  const cams = await LiveCam.find({ estado: 'ACTIVO' }).lean();
+  return cams.map(c => ({
+    id: c.idCamara,
+    ubicacion: c.ubicacion,
+    distrito: c.distrito,
+    url: c.urlStream,
+    lat: c.latitud,
+    lng: c.longitud,
+    proveedor: c.proveedor
+  }));
+};
+
+
+
 module.exports = {
   obtenerDatosCompletos,
   obtenerSismos,
@@ -153,4 +170,5 @@ module.exports = {
   obtenerBomberos,
   obtenerPuertos,
   obtenerSedes,
+  obtenerCamaras
 };

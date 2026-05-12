@@ -10,6 +10,27 @@ const app = express();
 app.use(express.json()); // Permite a la API recibir JSON en los body de las peticiones
 app.use(cookieParser());
 
+// 2.1 Public folder
+const path = require('path');
+
+// Servir archivos estáticos de SAM
+app.use('/sam', express.static(path.join(__dirname, 'public', 'sam')));
+
+// Ruta para la página principal (index.html) del login
+app.get('/sam', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'sam', 'index.html'));
+});
+
+// Ruta para el panel (panel.html)
+app.get('/sam/panel', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'sam', 'panel.html'));
+});
+
+// Ruta para el matrix (CCTV)
+app.get('/sam/matrix', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'sam', 'matrix.html'));
+});
+
 // 3. Conectar a MongoDB Atlas
 connectDB()
   .then(() => {
@@ -37,10 +58,14 @@ const authRoutes = require('./src/products/sam/routes/auth.routes');
 app.use('/api/v1/auth', authRoutes);
 console.log('✅ Rutas Auth montadas');
 
+const configRoutes = require('./src/products/sam/routes/config.routes');
+app.use('/api/v1/config', configRoutes);
+
 // Health check
 app.get('/', (req, res) => {
   res.json({ status: 'success', marca: 'Ricart Labs Core', timestamp: new Date() });
 });
+
 
 // Iniciar cron jobs
 const { initSamCrons } = require('./src/products/sam/services/sam.cron.js');

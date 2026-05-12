@@ -1,0 +1,219 @@
+[
+    {
+        "MES": "Enero",
+        "REGLA_DIA": "1 de enero",
+        "TITULO": "Año Nuevo",
+        "MOTIVO": "Un día como hoy se celebra el Año Nuevo, marcando el inicio del nuevo año según el calendario gregoriano.",
+        "FECHA_EXACTA": null
+    },
+    {
+        "MES": "Enero",
+        "REGLA_DIA": "18 de enero",
+        "TITULO": "Aniversario de Lima",
+        "MOTIVO": "Un día como hoy se celebra el Aniversario de Lima en honor a la fundación española de la \"Ciudad de los Reyes\" por Francisco Pizarro en 1535.",
+        "FECHA_EXACTA": null
+    },
+    {
+        "MES": "Febrero",
+        "REGLA_DIA": "1er sábado",
+        "TITULO": "Día del Pisco Sour",
+        "MOTIVO": "Un día como hoy se celebra el Día del Pisco Sour en honor al cóctel bandera del Perú, instituido para promover su valor cultural y consumo.",
+        "FECHA_EXACTA": null
+    },
+    {
+        "MES": "Marzo",
+        "REGLA_DIA": "8 de marzo",
+        "TITULO": "Día Internacional de la Mujer",
+        "MOTIVO": "Un día como hoy se celebra el Día Internacional de la Mujer en conmemoración a la lucha histórica de las mujeres por su participación en la sociedad y la igualdad de derechos.",
+        "FECHA_EXACTA": null
+    },
+    {
+        "MES": "Abril",
+        "REGLA_DIA": "Primer Jueves de Abril",
+        "TITULO": "Semana Santa",
+        "MOTIVO": "Un día como hoy se celebra la Semana Santa en conmemoración de la pasión, muerte y resurrección de Jesucristo según la tradición cristiana.",
+        "FECHA_EXACTA": null
+    },
+    {
+        "MES": "Abril",
+        "REGLA_DIA": "Primer Viernes de Abril",
+        "TITULO": "Semana Santa",
+        "MOTIVO": "Un día como hoy se celebra la Semana Santa en conmemoración de la pasión, muerte y resurrección de Jesucristo según la tradición cristiana.",
+        "FECHA_EXACTA": null
+    },
+    {
+        "MES": "Abril",
+        "REGLA_DIA": "Segundo Domingo de Abril",
+        "TITULO": "Día del Niño Peruano",
+        "MOTIVO": "Un día como hoy se celebra el “Día del Niño Peruano”, según precisa la Ley 27666, promulgada en el 2002. Esta norma, también señala que la Presidencia del Consejo de Ministros debe presentar un informe anual ante el Congreso de la República, sobre los lineamientos y metas del Plan Nacional de Acción por la Infancia y la Adolescencia (PNAIA), garantizando la aplicación de la Convención de los Derechos del Niño en nuestro país. Harían lo propio, los presidentes regionales ante el Consejo Regional y los Alcaldes, ante el Consejo Municipal.",
+        "FECHA_EXACTA": null
+    },
+    {
+        "MES": "Abril",
+        "REGLA_DIA": "12 de abril",
+        "TITULO": "Elecciones Presidenciales Perú",
+        "MOTIVO": "¡Hoy se celebran las Elecciones Generales Perú 2026!, millones de peruanos a nivel nacional y en el extranjero acuden a las urnas para ejercer su derecho y deber cívico en una de las jornadas democráticas más importantes del país.",
+        "FECHA_EXACTA": null
+    },
+    {
+        "MES": "Mayo",
+        "REGLA_DIA": "1 de mayo",
+        "TITULO": "Día del Trabajo",
+        "MOTIVO": "Un día como hoy se celebra el Día del Trabajo en homenaje a los \"Mártires de Chicago\" y la reivindicación histórica por la jornada laboral de 8 horas.",
+        "FECHA_EXACTA": null
+    },
+    {
+        "MES": "Mayo",
+        "REGLA_DIA": "2do domingo",
+        "TITULO": "Día de la Madre",
+        "MOTIVO": "Un día como hoy se celebra el Día de la Madre en honor y reconocimiento a la labor, el amor y el sacrificio de todas las madres en las familias peruanas.",
+        "FECHA_EXACTA": null
+    },
+    {
+        "MES": "Junio",
+        "REGLA_DIA": "7 de junio",
+        "TITULO": "Día de la Bandera y Batalla de Arica",
+        "MOTIVO": "Un día como hoy se celebra el Día de la Bandera y la Batalla de Arica en honor al heroísmo de Francisco Bolognesi, Alfonso Ugarte y sus soldados en 1880.",
+        "FECHA_EXACTA": null
+    },
+    {
+        "MES": "Junio",
+        "REGLA_DIA": "3er domingo",
+        "TITULO": "Día del Padre",
+        "MOTIVO": "Un día como hoy se celebra el Día del Padre en reconocimiento a la figura paterna y su importante rol en la crianza y la familia.",
+        "FECHA_EXACTA": null
+    },
+    {
+        "MES": "Junio",
+        "REGLA_DIA": "24 de junio",
+        "TITULO": "Día del Campesino \/ Inti Raymi",
+        "MOTIVO": "Un día como hoy se celebra el Día del Campesino y el Inti Raymi en reconocimiento al trabajador del campo y en honor a la festividad incaica de adoración al dios Sol (Inti).",
+        "FECHA_EXACTA": null
+    },
+    {
+        "MES": "Junio",
+        "REGLA_DIA": "29 de junio",
+        "TITULO": "San Pedro y San Pablo",
+        "MOTIVO": "Un día como hoy se celebra el Día de San Pedro y San Pablo en honor a los apóstoles pilares de la Iglesia Católica y al Día del Pescador.",
+        "FECHA_EXACTA": null
+    },
+    {
+        "MES": "Julio",
+        "REGLA_DIA": "6 de julio",
+        "TITULO": "Día del Maestro",
+        "MOTIVO": "Un día como hoy se celebra el Día del Maestro en honor a la fundación de la primera Escuela Normal de Varones en 1822, creada por José de San Martín.",
+        "FECHA_EXACTA": null
+    },
+    {
+        "MES": "Julio",
+        "REGLA_DIA": "23 de julio",
+        "TITULO": "Día de la Fuerza Aérea del Perú",
+        "MOTIVO": "Un día como hoy se celebra el Día de la Fuerza Aérea del Perú en honor al heroico sacrificio del capitán FAP José Abelardo Quiñones en 1941.",
+        "FECHA_EXACTA": null
+    },
+    {
+        "MES": "Julio",
+        "REGLA_DIA": "28 de julio",
+        "TITULO": "Independencia del Perú",
+        "MOTIVO": "Un día como hoy se celebra la Independencia del Perú en conmemoración de la Proclamación realizada por don José de San Martín en la Plaza de Armas de Lima (1821).",
+        "FECHA_EXACTA": null
+    },
+    {
+        "MES": "Julio",
+        "REGLA_DIA": "29 de julio",
+        "TITULO": "Gran Parada y Desfile Militar",
+        "MOTIVO": "Un día como hoy se celebra la Gran Parada y Desfile Militar en honor a las Fuerzas Armadas y la Policía Nacional del Perú, reconociendo su labor por la patria.",
+        "FECHA_EXACTA": null
+    },
+    {
+        "MES": "Agosto",
+        "REGLA_DIA": "6 de agosto",
+        "TITULO": "Batalla de Junín",
+        "MOTIVO": "Un día como hoy se celebra la Batalla de Junín en honor a la crucial victoria de la caballería patriota liderada por Simón Bolívar en 1824.",
+        "FECHA_EXACTA": null
+    },
+    {
+        "MES": "Agosto",
+        "REGLA_DIA": "30 de agosto",
+        "TITULO": "Día de Santa Rosa de Lima",
+        "MOTIVO": "Un día como hoy se celebra el Día de Santa Rosa de Lima en honor a Isabel Flores de Oliva, primera santa de América y patrona de las enfermeras y la PNP.",
+        "FECHA_EXACTA": null
+    },
+    {
+        "MES": "Agosto",
+        "REGLA_DIA": "Tercer domingo de Agosto",
+        "TITULO": "Día del Niño Internacional",
+        "MOTIVO": "Un día como hoy se celebra el Día del Niño Internacional para reconocer la importancia de la infancia, promover sus derechos, bienestar y protección",
+        "FECHA_EXACTA": null
+    },
+    {
+        "MES": "Setiembre",
+        "REGLA_DIA": "23 de setiembre",
+        "TITULO": "Día de la Juventud y Aviación",
+        "MOTIVO": "Un día como hoy se celebra el Día de la Juventud y la Aviación Nacional en celebración de la primavera y en honor a la hazaña del aviador peruano Jorge Chávez.",
+        "FECHA_EXACTA": null
+    },
+    {
+        "MES": "Setiembre",
+        "REGLA_DIA": "24 de setiembre",
+        "TITULO": "Día de las Fuerzas Armadas",
+        "MOTIVO": "Un día como hoy se celebra el Día de las Fuerzas Armadas, instituido en honor a la Virgen de la Merced, proclamada Patrona de las Armas del Perú en 1923.",
+        "FECHA_EXACTA": null
+    },
+    {
+        "MES": "Octubre",
+        "REGLA_DIA": "8 de octubre",
+        "TITULO": "Combate de Angamos",
+        "MOTIVO": "Un día como hoy se celebra el Combate de Angamos en honor al sacrificio y valentía del Almirante Miguel Grau Seminario y su tripulación en 1879.",
+        "FECHA_EXACTA": null
+    },
+    {
+        "MES": "Octubre",
+        "REGLA_DIA": "18 de octubre",
+        "TITULO": "Señor de los Milagros",
+        "MOTIVO": "Un día como hoy se celebra el día central del Señor de los Milagros en honor a la profunda devoción limeña y peruana hacia la imagen del Cristo Pachacamilla.",
+        "FECHA_EXACTA": null
+    },
+    {
+        "MES": "Octubre",
+        "REGLA_DIA": "31 de octubre",
+        "TITULO": "Día de la Canción Criolla",
+        "MOTIVO": "Un día como hoy se celebra el Día de la Canción Criolla en reconocimiento para revalorar y rendir homenaje a la música criolla peruana y a sus máximos exponentes.",
+        "FECHA_EXACTA": null
+    },
+    {
+        "MES": "Noviembre",
+        "REGLA_DIA": "1 de noviembre",
+        "TITULO": "Día de Todos los Santos",
+        "MOTIVO": "Un día como hoy se celebra el Día de Todos los Santos en conmemoración cristiana para honrar a los santos y recordar a los difuntos en los cementerios.",
+        "FECHA_EXACTA": null
+    },
+    {
+        "MES": "Noviembre",
+        "REGLA_DIA": "27 de noviembre",
+        "TITULO": "Batalla de Tarapacá",
+        "MOTIVO": "Un día como hoy se celebra la Batalla de Tarapacá en honor a la gran victoria peruana y la heroica resistencia durante la Guerra del Pacífico en 1879.",
+        "FECHA_EXACTA": null
+    },
+    {
+        "MES": "Diciembre",
+        "REGLA_DIA": "8 de diciembre",
+        "TITULO": "Día de la Inmaculada Concepción",
+        "MOTIVO": "Un día como hoy se celebra el Día de la Inmaculada Concepción en honor a la creencia católica sobre la pureza de la Virgen María desde su concepción.",
+        "FECHA_EXACTA": null
+    },
+    {
+        "MES": "Diciembre",
+        "REGLA_DIA": "9 de diciembre",
+        "TITULO": "Batalla de Ayacucho",
+        "MOTIVO": "Un día como hoy se celebra la Batalla de Ayacucho en honor a la victoria militar definitiva en 1824, consolidando la independencia del Perú y Sudamérica.",
+        "FECHA_EXACTA": null
+    },
+    {
+        "MES": "Diciembre",
+        "REGLA_DIA": "25 de diciembre",
+        "TITULO": "Navidad",
+        "MOTIVO": "Un día como hoy se celebra la Navidad en conmemoración del nacimiento de Jesucristo, siendo una de las fiestas familiares más importantes en el país.",
+        "FECHA_EXACTA": null
+    }
+]

@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Inter:wght@300;400;700&display=swap');
+    
+    body { 
+      font-family: 'Inter', sans-serif; 
+      background-color: #050505;
+      color: #94a3b8; 
+    }
+    .font-console { font-family: 'Share Tech Mono', monospace; }
+    
+    .radar-bg {
+      background-image: 
+        linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
+
+    .glass-panel {
+      background: rgba(15, 15, 15, 0.95);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(13, 255, 255, 0.15);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.9), inset 0 0 20px rgba(13, 255, 255, 0.02);
+    }
+
+    .glow-text {
+      color: #0dffff;
+      text-shadow: 0 0 12px rgba(13, 255, 255, 0.6);
+    }
+
+    .glow-line {
+      background-color: #0dffff;
+      box-shadow: 0 0 15px #0dffff, 0 0 5px #0dffff;
+    }
+
+    .notify-enter { animation: slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+    .notify-exit { animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+    
+    @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes slideUp { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(-10px); } }
+    
+    .custom-scroll::-webkit-scrollbar { width: 4px; }
+    .custom-scroll::-webkit-scrollbar-track { background: rgba(15,15,15,0.5); }
+    .custom-scroll::-webkit-scrollbar-thumb { background: #0dffff; border-radius: 4px; }
+  </style>
+  <script src="/sam/js/auth.js"></script>
+</head>
+<body class="h-screen w-full flex items-center justify-center overflow-hidden radar-bg relative">
+  
+  <div class="relative z-20 w-full max-w-md p-4">
+    
+    <div class="flex items-center justify-center gap-4 mb-8">
+      <img src="https://i.postimg.cc/CKD21t1v/SAM-Logo-500.png" alt="SAM" class="h-12 opacity-100 drop-shadow-[0_0_8px_rgba(13,255,255,0.5)]" onerror="this.style.display='none'">
+      <div>
+        <h1 class="text-3xl font-console glow-text tracking-widest leading-none">SAM_ <span class="text-xs text-slate-500 shadow-none">v3.0</span></h1>
+        <p class="text-[9px] text-slate-400 font-bold uppercase tracking-[0.3em] mt-1">Security Alerts Monitoring</p>
+      </div>
+    </div>
+
+    <div class="glass-panel rounded-xl p-7 relative overflow-hidden">
+       <div class="absolute top-6 bottom-6 right-0 w-[3px] rounded-l glow-line opacity-80"></div>
+       
+       <div id="hud-notification" class="hidden mb-5 p-3 rounded-lg border border-[#0dffff]/30 bg-[#0dffff]/5 text-xs font-console flex items-center gap-3 notify-enter text-[#0dffff]">
+          <i id="hud-icon" class="text-lg"></i>
+          <span id="hud-message" class="tracking-wide"></span>
+       </div>
+
+       <div id="auth-content"></div>
+    </div>
+  </div>
+
+  <script>
+    const content = document.getElementById('auth-content');
+    const hud = document.getElementById('hud-notification');
+    const hudIcon = document.getElementById('hud-icon');
+    const hudMsg = document.getElementById('hud-message');
+
+    // ========================================================
+    // AUTO-PILOTO: VERIFICACIÓN DE SESIÓN AL CARGAR
+    // ========================================================
+    window.onload = async function() {
+      const linkActual = window.location.href;
+      const esModoMatrix = linkActual.toLowerCase().includes("view=matrix");
+
+      console.log("--- SAM PROTOCOLO DE ARRANQUE ---");
+      console.log("URL de entrada:", linkActual);
+
+      // --- BYPASS MATRIX ---
+      if (esModoMatrix) {
+        console.warn("ALERTA: Misión MATRIX detectada. Ejecutando acceso directo...");
+        if(content) {
+          content.innerHTML = `
+            <div class="text-center font-console text-sky-400 text-xs py-10">
+              <i class="fa-solid fa-expand fa-beat-fast text-2xl mb-3"></i><br>
+              DESPLEGANDO MATRIX CCTV...
+            </div>`;
+        }
+        // Redirigir a matrix.html directamente (sin GAS)
+        window.location.href = '/sam/matrix';
+        return;
+      }
+
+      // --- VERIFICAR SESIÓN EXISTENTE ---
+      try {
+        const data = await AuthService.getProfile();
+        // Sesión válida: redirigir al panel
+        console.log("SAM: Sesión detectada. Restaurando Panel de Control...");
+        if(content) {
+          content.innerHTML = `
+            <div class="text-center font-console text-sky-400 text-xs py-10">
+              <i class="fa-solid fa-satellite-dish fa-spin text-2xl mb-3"></i><br>
+              RESTAURANDO CONEXIÓN SEGURA...
+            </div>`;
+        }
+        setTimeout(() => { window.location.href = '/sam/panel'; }, 600);
+      } catch (err) {
+        // No hay sesión o token inválido → mostrar login
+        console.log("SAM: No hay sesión válida. Cargando Login.");
+        mostrarLogin();
+      }
+    };
+
+    // --- SISTEMA DE NOTIFICACIONES ---
+    function mostrarNotificacion(mensaje, tipo) {
+      hud.classList.remove('hidden', 'notify-exit', 'border-red-500', 'bg-red-500/10', 'text-red-400', 'border-[#0dffff]/30', 'bg-[#0dffff]/5', 'text-[#0dffff]', 'border-amber-500', 'bg-amber-500/10', 'text-amber-400');
+      
+      hudMsg.innerText = mensaje;
+      
+      if (tipo === 'error') {
+        hud.classList.add('border-red-500', 'bg-red-500/10', 'text-red-400');
+        hudIcon.className = 'fa-solid fa-triangle-exclamation text-red-500';
+      } else if (tipo === 'loading') {
+        hud.classList.add('border-[#0dffff]/30', 'bg-[#0dffff]/5', 'text-[#0dffff]');
+        hudIcon.className = 'fa-solid fa-circle-notch fa-spin text-[#0dffff]';
+      } else if (tipo === 'warning') {
+        hud.classList.add('border-amber-500', 'bg-amber-500/10', 'text-amber-400');
+        hudIcon.className = 'fa-solid fa-shield-halved text-amber-500';
+      } else if (tipo === 'success') {
+        hud.classList.add('border-[#0dffff]/50', 'bg-[#0dffff]/10', 'text-[#0dffff]');
+        hudIcon.className = 'fa-solid fa-check text-[#0dffff] drop-shadow-[0_0_5px_#0dffff]';
+      }
+      
+      hud.classList.add('notify-enter');
+    }
+
+    function ocultarNotificacion() {
+      if(!hud.classList.contains('hidden')) {
+        hud.classList.replace('notify-enter', 'notify-exit');
+        setTimeout(() => hud.classList.add('hidden'), 300);
+      }
+    }
+
+    // --- VISTAS (igual que antes) ---
+    function mostrarLogin() {
+      ocultarNotificacion();
+      content.innerHTML = `
+        <div class="space-y-5 pr-4">
+          <div class="relative">
+            <i class="fa-solid fa-terminal absolute left-4 top-1/2 -translate-y-1/2 text-[#0dffff]/50 text-xs"></i>
+            <input type="text" id="user" placeholder="USUARIO ID" class="w-full bg-[#111111] border border-[#222222] rounded-md p-3 pl-10 text-[#0dffff] text-xs font-console uppercase tracking-widest outline-none focus:border-[#0dffff]/70 focus:bg-[#0a0a0a] transition-all placeholder:text-slate-600 shadow-inner">
+          </div>
+          <div class="relative">
+            <i class="fa-solid fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-[#0dffff]/50 text-xs"></i>
+            <input type="password" id="pass" placeholder="CONTRASEÑA" class="w-full bg-[#111111] border border-[#222222] rounded-md p-3 pl-10 text-[#0dffff] text-xs font-console tracking-widest outline-none focus:border-[#0dffff]/70 focus:bg-[#0a0a0a] transition-all placeholder:text-slate-600 shadow-inner" onkeypress="if(event.key === 'Enter') ejecutarLogin()">
+          </div>
+          <button id="btn-login" onclick="ejecutarLogin()" class="w-full bg-[#0a0a0a] border border-[#0dffff]/20 hover:bg-[#0dffff]/10 hover:border-[#0dffff]/80 p-3.5 rounded-md font-console font-bold glow-text text-xs tracking-[0.2em] transition-all flex justify-center items-center gap-3 mt-4 drop-shadow-[0_0_10px_rgba(13,255,255,0.1)]">
+            TRANSMITIR SOLICITUD <i class="fa-solid fa-satellite-dish"></i>
+          </button>
+          <div class="text-center pt-4 border-t border-[#222] mt-5">
+            <button onclick="mostrarRegistro()" class="text-[10px] font-console text-slate-500 tracking-[0.1em] hover:text-[#0dffff] hover:drop-shadow-[0_0_5px_#0dffff] transition-all uppercase"><i class="fa-solid fa-plus mr-1"></i> Solicitar Nuevo Acceso</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function mostrarRegistro() {
+      ocultarNotificacion();
+      content.innerHTML = `
+        <div class="grid grid-cols-2 gap-3 max-h-[50vh] overflow-y-auto px-1 pr-5 custom-scroll mb-5">
+          <div class="col-span-2"><p class="text-[10px] text-[#0dffff] font-console font-bold border-b border-[#222] pb-1.5 mb-1.5 tracking-wider">// IDENTIFICACIÓN</p></div>
+          <input type="text" id="reg-nombre" placeholder="Nombre Completo" class="col-span-2 bg-[#111] border border-[#222] rounded px-3 py-2.5 text-[#e2e8f0] text-[11px] outline-none focus:border-[#0dffff]/70 font-console placeholder:text-slate-600">
+          <input type="text" id="reg-user" placeholder="Usuario ID" class="bg-[#111] border border-[#222] rounded px-3 py-2.5 text-[#e2e8f0] text-[11px] outline-none focus:border-[#0dffff]/70 font-console placeholder:text-slate-600 uppercase">
+          <input type="password" id="reg-pass" placeholder="Contraseña" class="bg-[#111] border border-[#222] rounded px-3 py-2.5 text-[#e2e8f0] text-[11px] outline-none focus:border-[#0dffff]/70 font-console placeholder:text-slate-600">
+          
+          <div class="col-span-2 mt-3"><p class="text-[10px] text-[#0dffff] font-console font-bold border-b border-[#222] pb-1.5 mb-1.5 tracking-wider">// DATOS CORPORATIVOS</p></div>
+          <input type="text" id="reg-empresa" oninput="this.value = this.value.toUpperCase()" placeholder="NOMBRE DE EMPRESA" class="col-span-2 bg-[#111] border border-[#222] rounded px-3 py-2.5 text-[#0dffff] font-bold text-[11px] outline-none focus:border-[#0dffff]/70 font-console placeholder:text-slate-600">
+          <input type="email" id="reg-correo" placeholder="Correo Electrónico" class="col-span-2 bg-[#111] border border-[#222] rounded px-3 py-2.5 text-[#e2e8f0] text-[11px] outline-none focus:border-[#0dffff]/70 font-console placeholder:text-slate-600">
+          
+          <select id="reg-prefijo" class="bg-[#111] border border-[#222] rounded px-2 py-2.5 text-[#e2e8f0] text-[11px] outline-none focus:border-[#0dffff]/70 font-console">
+            <option value="+51">+51 PE</option><option value="+54">+54 AR</option><option value="+56">+56 CL</option><option value="+57">+57 CO</option><option value="+52">+52 MX</option>
+          </select>
+          <input type="tel" id="reg-telefono" placeholder="Teléfono" class="bg-[#111] border border-[#222] rounded px-3 py-2.5 text-[#e2e8f0] text-[11px] outline-none focus:border-[#0dffff]/70 font-console placeholder:text-slate-600">
+          
+          <input type="text" id="reg-logo" placeholder="URL Logo (Opcional)" class="col-span-2 bg-[#111] border border-[#222] rounded px-3 py-2.5 text-[#e2e8f0] text-[11px] outline-none focus:border-[#0dffff]/70 font-console placeholder:text-slate-600">
+          <input type="text" id="reg-colores" placeholder="Colores HEX (Opcional)" class="col-span-2 bg-[#111] border border-[#222] rounded px-3 py-2.5 text-[#e2e8f0] text-[11px] outline-none focus:border-[#0dffff]/70 font-console placeholder:text-slate-600">
+        </div>
+        <button id="btn-reg" onclick="ejecutarRegistro()" class="w-full mr-4 max-w-[calc(100%-1rem)] bg-[#0a0a0a] border border-[#0dffff]/20 hover:bg-[#0dffff]/10 hover:border-[#0dffff]/80 p-3.5 rounded-md font-console font-bold glow-text text-xs tracking-[0.2em] transition-all flex justify-center items-center gap-3 drop-shadow-[0_0_10px_rgba(13,255,255,0.1)]">
+          TRANSMITIR SOLICITUD <i class="fa-solid fa-upload"></i>
+        </button>
+        <button onclick="mostrarLogin()" class="w-full mt-4 mr-4 max-w-[calc(100%-1rem)] text-[10px] font-console text-slate-500 tracking-[0.1em] hover:text-[#0dffff] hover:drop-shadow-[0_0_5px_#0dffff] transition-all uppercase">CANCELAR ABORTO</button>
+      `;
+    }
+
+    // --- LÓGICA DE COMUNICACIÓN MIGRADA ---
+    async function ejecutarLogin() {
+      const u = document.getElementById('user').value.trim();
+      const p = document.getElementById('pass').value.trim();
+      const btn = document.getElementById('btn-login');
+
+      if(!u || !p) return mostrarNotificacion("Parámetros de acceso incompletos.", "error");
+
+      mostrarNotificacion("Estableciendo conexión encriptada...", "loading");
+      btn.disabled = true; btn.classList.add('opacity-50');
+
+      try {
+        const data = await AuthService.login(u, p);
+        console.log("Datos recibidos del servidor:", data);
+        // Login exitoso: redirigir al panel
+        window.location.href = '/sam/panel';
+      } catch (error) {
+        btn.disabled = false; btn.classList.remove('opacity-50');
+        if(error.message.includes("Pendiente") || error.message.includes("restringido")) {
+          mostrarNotificacion(error.message, "warning");
+        } else {
+          mostrarNotificacion(error.message, "error");
+        }
+      }
+    }
+
+    async function ejecutarRegistro() {
+      const btn = document.getElementById('btn-reg');
+      const datos = {
+        usuario: document.getElementById('reg-user').value.trim(),
+        password: document.getElementById('reg-pass').value.trim(),
+        nombre: document.getElementById('reg-nombre').value.trim(),
+        empresa: document.getElementById('reg-empresa').value.trim(),
+        correo: document.getElementById('reg-correo').value.trim(),
+        prefijo: document.getElementById('reg-prefijo').value,
+        telefono: document.getElementById('reg-telefono').value.trim(),
+        logo: document.getElementById('reg-logo').value.trim(),
+        colores: document.getElementById('reg-colores').value.trim()
+      };
+
+      if(!datos.usuario || !datos.password || !datos.empresa || !datos.nombre) {
+        return mostrarNotificacion("Faltan campos tácticos obligatorios.", "error");
+      }
+
+      mostrarNotificacion("Transfiriendo paquete de datos...", "loading");
+      btn.disabled = true; btn.classList.add('opacity-50');
+
+      try {
+        await AuthService.register(datos);
+        mostrarNotificacion("Registro enviado. Pendiente de aprobación nivel Admin.", "success");
+        setTimeout(mostrarLogin, 3000);
+      } catch (error) {
+        btn.disabled = false; btn.classList.remove('opacity-50');
+        mostrarNotificacion("Error: " + error.message, "error");
+      }
+    }
+  </script>
+</body>
+</html>

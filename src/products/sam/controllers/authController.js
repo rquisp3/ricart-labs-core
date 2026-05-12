@@ -2,17 +2,7 @@ const authService = require('../services/authService');
 
 // POST /auth/registro
 const registro = async (req, res) => {
-  console.log('📝 [REGISTRO] Body recibido:', JSON.stringify(req.body));
   try {
-    // Validación básica
-    if (!req.body.usuario || !req.body.password) {
-      console.warn('⚠️ [REGISTRO] Faltan campos obligatorios');
-      return res.status(400).json({
-        success: false,
-        message: 'Faltan campos obligatorios: usuario y password'
-      });
-    }
-
     const resultado = await authService.registrarUsuario(req.body);
     res.status(201).json({
       success: true,
@@ -20,13 +10,7 @@ const registro = async (req, res) => {
       data: resultado
     });
   } catch (error) {
-    console.error('❌ [REGISTRO] Error:', error.message);
-    console.error('Stack:', error.stack);
-    // Diferenciar entre error de validación y error interno
-    if (error.message.includes('ya existe')) {
-      return res.status(409).json({ success: false, message: error.message });
-    }
-    res.status(500).json({ success: false, message: 'Error interno del servidor' });
+    res.status(400).json({ success: false, message: error.message });
   }
 };
 

@@ -6,7 +6,12 @@ const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret_change_in_production';
 // Middleware que protege rutas: verifica token desde cookies
 const proteger = async (req, res, next) => {
   try {
-    const token = req.cookies?.access_token;
+    let token = req.cookies?.access_token;
+
+    // 🔥 NUEVO: aceptar token por header
+    if (!token && req.headers.authorization?.startsWith('Bearer ')) {
+      token = req.headers.authorization.split(' ')[1];
+    }
 
     if (!token) {
       return res.status(401).json({

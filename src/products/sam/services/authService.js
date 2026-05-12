@@ -58,32 +58,35 @@ const loginUsuario = async (usuario, password, res) => {
   user.ultimoLogin = new Date();
   await user.save();
 
+  // En la función loginUsuario, dentro de res.cookie()
   res.cookie('access_token', accessToken, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
-    maxAge: 24 * 60 * 60 * 1000
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
+  maxAge: 24 * 60 * 60 * 1000
   });
+
   res.cookie('refresh_token', refreshToken, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
-    maxAge: 7 * 24 * 60 * 60 * 1000
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
+  maxAge: 7 * 24 * 60 * 60 * 1000
   });
 
   return {
-    id: user._id,
-    nombre: user.nombre,
-    usuario: user.usuario,
-    perfil: user.perfil,
-    empresa: user.empresa,
-    logo: user.logo,
-    colores: user.colores,
-    correo: user.correo,
-    prefijo: user.prefijo,
-    telefono: user.telefono,
-    telegram: user.telegram
-  };
+  id: user._id,
+  nombre: user.nombre,
+  usuario: user.usuario,
+  perfil: user.perfil,
+  empresa: user.empresa,
+  logo: user.logo,
+  colores: user.colores,
+  correo: user.correo,
+  prefijo: user.prefijo,
+  telefono: user.telefono,
+  telegram: user.telegram,
+  accessToken  // <-- añadimos el token
+};
 };
 
 // Logout

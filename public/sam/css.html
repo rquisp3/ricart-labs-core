@@ -1,0 +1,649 @@
+<style>
+  /* Las fuentes Barlow y JetBrains Mono ahora se cargan desde el index.html de forma segura */
+
+  body {
+    font-family: 'Barlow', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+  }
+
+  .font-console {
+    /* Aquí puedes decidir si quieres que la consola use Barlow o JetBrains Mono */
+    font-family: 'Barlow', sans-serif;
+  }
+
+  /* Scrollbar minimalista */
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+  }
+
+  .dark ::-webkit-scrollbar-thumb {
+    background: #3f3f46;
+  }
+
+  /* ==========================================
+     TICKER ANIMATION (CINTA INFERIOR)
+     ========================================== */
+  .marquee-container {
+      overflow: hidden;
+      white-space: nowrap;
+      display: flex;
+      flex-wrap: nowrap;
+      width: 100%;
+  }
+
+  .marquee-content {
+      display: flex;
+      flex-shrink: 0;
+      /* Ajusta los segundos (ej. 90s o 120s) para hacerlo más lento. Antes estaba en 30s o 40s */
+      animation: marquee 180s linear infinite; 
+  }
+
+  /* NUEVO: PAUSA TÁCTICA. La cinta se detiene al poner el mouse encima para facilitar el clic */
+  .marquee-container:hover .marquee-content {
+      animation-play-state: paused;
+  }
+
+  @keyframes marquee {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); } /* Se desplaza la mitad exacta (ya que el contenido está duplicado) */
+  }
+
+  /* Transición Sidebar */
+  .sidebar-open {
+    transform: translateX(0%);
+  }
+
+  .sidebar-closed {
+    transform: translateX(100%);
+  }
+
+  /* Ajuste de los controles de Leaflet para no chocar con el Topbar */
+  .leaflet-top {
+    top: 70px !important;
+  }
+
+  /* Glassmorphism y Dark Mode Puro (Sin tonos azules) */
+  .glass-nav {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+  }
+
+  .dark .glass-nav {
+    background: rgba(10, 10, 10, 0.95);
+    /* Negro profundo */
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .glass-card {
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+  }
+
+  .dark .glass-card {
+    background: rgba(23, 23, 23, 0.9);
+    /* Gris muy oscuro */
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .radar-ping {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    animation: ping-respiro 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+  }
+
+  @keyframes ping-respiro {
+    0% {
+      transform: scale(0.5);
+      opacity: 0.8;
+    }
+
+    100% {
+      transform: scale(3.5);
+      opacity: 0;
+    }
+  }
+
+  /* Topbar estático pero con estilo HUD */
+  .glass-nav {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  }
+
+  .dark .glass-nav {
+    background: rgba(18, 18, 18, 0.95);
+    /* Gris HUD (#121212) */
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    /* Borde sutil inferior */
+  }
+
+  /* Bordes de Íconos Inmersivos y Finos */
+  .icon-marker {
+    border: 1px solid #ffffff;
+    /* Borde fino blanco para modo claro */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+  }
+
+  .dark .icon-marker {
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    /* Borde cristalino ultra fino para modo oscuro */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+  }
+
+  /* Animación táctica de retumbar (Rumble) para las alertas en el mapa */
+  @keyframes rumble {
+    0% {
+      transform: translate(0, 0) rotate(0deg);
+    }
+
+    25% {
+      transform: translate(-1px, 1px) rotate(-5deg);
+    }
+
+    50% {
+      transform: translate(1px, -1px) rotate(5deg);
+    }
+
+    75% {
+      transform: translate(-1px, -1px) rotate(-5deg);
+    }
+
+    100% {
+      transform: translate(1px, 1px) rotate(5deg);
+    }
+  }
+
+  .marker-rumble {
+    transition: all 0.2s;
+  }
+
+  .marker-rumble:hover {
+    animation: rumble 0.15s infinite;
+    cursor: pointer;
+    z-index: 1000 !important;
+  }
+
+  /* ==========================================
+     TOOLTIPS PERSONALIZADOS (UNIVERSALES)
+     ========================================== */
+  .custom-tooltip {
+    background-color: #ffffff;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    border-radius: 6px;
+    padding: 8px 12px !important; /* Más respiro a los lados */
+    
+    /* FIX ESTRUCTURAL */
+    white-space: normal !important; /* Permite el salto de línea... */
+    min-width: 220px !important;    /* ...pero lo obliga a extenderse horizontalmente */
+    max-width: 300px !important;    /* Límite para que no se salga del mapa */
+    word-wrap: break-word !important; 
+    line-height: 1.3 !important;    /* Interlineado más limpio */
+  }
+
+  /* Modo Oscuro para Tooltips */
+  .dark .custom-tooltip {
+    background-color: #121212 !important;
+    border: 1px solid #333 !important;
+    color: #e5e7eb !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.8) !important;
+  }
+
+  .dark .custom-tooltip .text-gray-600 {
+    color: #a3a3a3 !important;
+  }
+
+  /* Forzar las flechitas (triángulos) de Leaflet al color oscuro */
+  .dark .custom-tooltip.leaflet-tooltip-top:before {
+    border-top-color: #121212 !important;
+  }
+
+  .dark .custom-tooltip.leaflet-tooltip-bottom:before {
+    border-bottom-color: #121212 !important;
+  }
+
+  .dark .custom-tooltip.leaflet-tooltip-left:before {
+    border-left-color: #121212 !important;
+  }
+
+  .dark .custom-tooltip.leaflet-tooltip-right:before {
+    border-right-color: #121212 !important;
+  }
+
+  /* ==========================================
+     SCROLLBAR INVISIBLE/FINO PARA EL HUD MÓVIL
+     ========================================== */
+  .hud-scrollbar::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .hud-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .hud-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(156, 163, 175, 0.5);
+    /* Gris semi-transparente */
+    border-radius: 10px;
+  }
+
+  .dark .hud-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    /* Blanco cristalino en dark mode */
+  }
+
+  /* ==========================================
+     TICKER TÁCTICO (MARQUEE)
+     ========================================== */
+  .marquee-container {
+    overflow: hidden;
+    white-space: nowrap;
+    position: relative;
+    width: 100%;
+  }
+
+  .marquee-content {
+    display: inline-flex;
+    white-space: nowrap;
+    animation: scroll-ticker 90s linear infinite;
+  }
+
+  .marquee-content:hover {
+    animation-play-state: paused;
+    /* Pausa al pasar el mouse para leer */
+  }
+
+  @keyframes scroll-ticker {
+    0% {
+      transform: translateX(0);
+    }
+
+    100% {
+      transform: translateX(-50%);
+    }
+
+    /* Desplaza la mitad para loop infinito */
+  }
+
+  /* ============================================== */
+  /* --- PURIFICACIÓN DE CONTROLES DEL MAPA --- */
+  /* ============================================== */
+
+  /* 1. Base Unificada para Todos los Grupos de Control */
+  .leaflet-control-zoom,
+  .leaflet-control-fullscreen,
+  .leaflet-control-layers {
+      border: none !important; /* Elimina bordes individuales */
+      box-shadow: 0 1px 5px rgba(0,0,0,0.4) !important; /* Sombra unificada y limpia */
+      overflow: hidden; /* Asegura que el contenido respete el redondeado */
+      background-color: #ffffff !important; /* Fondo blanco purificado */
+  }
+
+  /* 2. Estilo Unificado para los Botones Interiores */
+  .leaflet-bar a,
+  .leaflet-control-fullscreen-button a,
+  .leaflet-control-layers-toggle {
+      background-color: #ffffff !important;
+      color: #333333 !important; /* Color de icono en gris oscuro */
+      border-bottom: 1px solid #e5e7eb !important; /* Línea divisoria gris claro */
+      width: 30px !important; /* Ancho unificado */
+      height: 30px !important; /* Alto unificado */
+      line-height: 30px !important; /* Centrado vertical de iconos */
+      display: flex !important;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none !important;
+      border-radius: 0 !important; /* Elimina redondeados interiores */
+  }
+
+  /* Hover unificado */
+  .leaflet-bar a:hover,
+  .leaflet-control-fullscreen-button a:hover,
+  .leaflet-control-layers-toggle:hover {
+      background-color: #f3f4f6 !important;
+      color: #000000 !important;
+  }
+
+  /* 3. Apilado y Redondeado Inteligente */
+  /* Elimina márgenes verticales para que se toquen */
+  .leaflet-top.leaflet-left .leaflet-control {
+      margin-top: 0 !important;
+      margin-bottom: 0 !important;
+  }
+
+  /* Redondeado superior para el primer control (Zoom) */
+  .leaflet-top.leaflet-left .leaflet-control-zoom {
+      border-radius: 4px 4px 0 0 !important;
+  }
+
+  /* Redondeado inferior para el último control (por defecto Layers) */
+  .leaflet-top.leaflet-left .leaflet-control-layers {
+      border-radius: 0 0 4px 4px !important;
+  }
+
+  /* Asegurar que las capas se vean bien expandidas */
+  .leaflet-control-layers-expanded {
+      border: none !important;
+      background: #ffffff !important;
+      color: #000000 !important;
+      font-size: 11px !important; /* Fuente unificada */
+  }
+
+  /* Corrección específica para el icono de capas */
+  .leaflet-control-layers-toggle {
+      filter: brightness(0.2); /* Oscurece el icono para que se vea sobre blanco */
+  }
+
+  /* ============================================== */
+  /* --- MODO OSCURO (DARK MODE) PARA CONTROLES --- */
+  /* ============================================== */
+  .dark .leaflet-control-zoom,
+  .dark .leaflet-control-fullscreen,
+  .dark .leaflet-control-layers {
+      background-color: #1a1a1a !important; /* Fondo gris oscuro */
+      box-shadow: 0 1px 5px rgba(0,0,0,0.8) !important; /* Sombra más oscura */
+  }
+
+  .dark .leaflet-bar a,
+  .dark .leaflet-control-fullscreen-button a,
+  .dark .leaflet-control-layers-toggle {
+      background-color: #1a1a1a !important;
+      color: #e5e7eb !important; /* Iconos gris claro */
+      border-bottom: 1px solid #333333 !important; /* Divisor oscuro */
+  }
+
+  .dark .leaflet-bar a:hover,
+  .dark .leaflet-control-fullscreen-button a:hover,
+  .dark .leaflet-control-layers-toggle:hover {
+      background-color: #262626 !important;
+      color: #ffffff !important;
+  }
+
+  /* Corrección específica para el icono de capas en modo oscuro */
+  .dark .leaflet-control-layers-toggle {
+      filter: brightness(0.8); /* Aclara el icono para que se vea sobre negro */
+  }
+  /*.dark .leaflet-control-fullscreen-button a { filter: brightness(0.8) !important; }*/
+
+  /* Fondo del mapa oscuro */
+  .dark #map, .dark .leaflet-container, .dark .mapboxgl-canvas { background-color: #1F1F1F !important; }
+
+  /* ============================================== */
+  /* ALARMAS VISUALES SOC (SOC ALERTS)              */
+  /* ============================================== */
+
+  /* 1. Flash Táctico para Tarjetas con Nuevas Alertas */
+  @keyframes card-emergency-flash {
+    0% {
+      box-shadow: 0 0 0px transparent;
+      border-color: rgba(239, 68, 68, 0.2);
+    }
+
+    50% {
+      box-shadow: 0 0 20px rgba(239, 68, 68, 0.6);
+      border-color: rgba(239, 68, 68, 1);
+      background-color: rgba(239, 68, 68, 0.05);
+    }
+
+    100% {
+      box-shadow: 0 0 0px transparent;
+      border-color: rgba(239, 68, 68, 0.2);
+    }
+  }
+
+  .soc-alert-active {
+    animation: card-emergency-flash 1.5s infinite;
+  }
+
+  /* 2. Badge (Puntito Rojo) para Boletín Nuevo */
+  .badge-boletin {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    width: 12px;
+    height: 12px;
+    background-color: #ef4444;
+    /* Rojo alerta */
+    border-radius: 50%;
+    border: 2px solid #1a1a1a;
+    animation: ping-respiro 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+  }
+
+  /* ============================================== */
+  /* FUENTE TÁCTICA DEL RELOJ (7 SEGMENTOS)         */
+  /* ============================================== */
+  @font-face {
+    font-family: 'DSEG7-Tactical';
+    src: url('https://cdn.jsdelivr.net/npm/dseg@0.46.0/fonts/DSEG7-Classic/DSEG7Classic-Italic.woff2') format('woff2');
+    font-weight: normal;
+    font-style: normal;
+    /* Lo dejamos en normal porque el archivo ya viene inclinado de fábrica */
+  }
+
+  /* ============================================== */
+  /* TICKER INTELIGENTE PARA BADGES DESBORDADOS     */
+  /* ============================================== */
+  @keyframes scroll-badge-seamless {
+    0% {
+      transform: translateX(0);
+    }
+
+    100% {
+      transform: translateX(-50%);
+    }
+  }
+
+  .badge-ticker-mask {
+    width: 100%;
+    overflow: hidden;
+    white-space: nowrap;
+    /* Efecto de difuminado (fade) en el borde derecho */
+    -webkit-mask-image: linear-gradient(to right, rgba(0, 0, 0, 1) 85%, rgba(0, 0, 0, 0) 100%);
+    mask-image: linear-gradient(to right, rgba(0, 0, 0, 1) 85%, rgba(0, 0, 0, 0) 100%);
+  }
+
+  .badge-ticker-track {
+    display: inline-block;
+    white-space: nowrap;
+    animation: scroll-badge-seamless 15s linear infinite;
+  }
+
+  .badge-ticker-track:hover {
+    animation-play-state: paused;
+    /* Pausa táctica al pasar el mouse */
+  }
+
+  /* ============================================== */
+  /* BLINDAJE DE ALERTAS (SWEETALERT SUPREMO)       */
+  /* ============================================== */
+  .swal2-container {
+      z-index: 20000 !important;
+  }
+
+  /* ============================================== */
+  /* FIX RESPONSIVO: DOMINIO TOTAL SOBRE EL PANEL   */
+  /* ============================================== */
+  @media (max-width: 768px) {
+      /* 1. Sometemos al contenedor por ID con prioridad absoluta */
+      #layer-content {
+          max-height: 45vh !important; /* Bajamos a 42 para asegurar que no toque el HUD */
+          height: auto !important;     /* Neutraliza el cálculo de Leaflet */
+          overflow-y: auto !important; 
+          overflow-x: hidden !important;
+          padding-right: 8px !important;
+          -webkit-overflow-scrolling: touch !important;
+      }
+
+      /* 2. Forzamos la lista interna para que herede el límite */
+      .leaflet-control-layers-list,
+      .leaflet-control-layers-scrollbar {
+          max-height: 43vh !important;
+          height: auto !important;
+      }
+
+      /* 3. Estilización táctica del scrollbar interno */
+      #layer-content::-webkit-scrollbar {
+          width: 4px;
+      }
+      #layer-content::-webkit-scrollbar-track {
+          background: transparent;
+      }
+      #layer-content::-webkit-scrollbar-thumb {
+          background-color: rgba(156, 163, 175, 0.5);
+          border-radius: 10px;
+      }
+  }
+
+  /* ==========================================================
+     MÓDULO NAVAL (DICAPI) - SAM_ v3.5 (PURGADO Y CONSOLIDADO)
+     ========================================================== */
+
+  /* ----------------------------------------------------------
+     1. MARCADORES DEL MAPA (MICRO-LEDS SIN RESPLANDOR)
+     ---------------------------------------------------------- */
+  .custom-dicapi-icon {
+      width: 10px !important;
+      height: 10px !important;
+      border-radius: 50%;
+      /* Borde sutil base claro */
+      border: 1px solid #e5e7eb; 
+      /* Sombra estándar HUD claro (no resplandor) */
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3) !important; 
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  /* Soporte Dark Mode - Borde cristalino Turn 4 y Sombra estándar HUD Turn 1 */
+  .dark .custom-dicapi-icon {
+      border: 1px solid rgba(255, 255, 255, 0.2) !important;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.8) !important;
+  }
+
+  /* Efecto Zoom táctico hover */
+  .custom-dicapi-icon:hover {
+      transform: scale(1.8) !important;
+      cursor: crosshair;
+      z-index: 2000 !important;
+  }
+
+  /* Colores Puros (Ya no tienen box-shadow individual) */
+  .dicapi-icon-red   { background-color: #ef4444 !important; }
+  .dicapi-icon-amber { background-color: #f59e0b !important; }
+  .dicapi-icon-green {
+      background-color: #10b981 !important;
+      opacity: 0.9; /* Muy visibles sobre mapa oscuro */
+  }
+
+  /* ----------------------------------------------------------
+     2. ANIMACIÓN DE ALARMA TEMPORAL (AJUSTADA A 10px)
+     ---------------------------------------------------------- */
+  .dicapi-pulse-temp-red {
+      animation: dicapi-micro-pulse-red 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+  }
+  .dicapi-pulse-temp-amber {
+      animation: dicapi-micro-pulse-amber 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+  }
+
+  /* El radio de expansión de la sombra bajó de 12px a 8px para el tamaño mini */
+  @keyframes dicapi-micro-pulse-red {
+      0%   { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.8); }
+      70%  { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+  }
+  @keyframes dicapi-micro-pulse-amber {
+      0%   { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.8); }
+      70%  { box-shadow: 0 0 0 8px rgba(245, 158, 11, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+  }
+
+  /* ----------------------------------------------------------
+     3. PANEL LATERAL: HEADER STICKY & DONUT CHART v4.0
+     ---------------------------------------------------------- */
+  
+  /* Orientación Base del SVG */
+  .dicapi-donut-svg {
+      transform: rotate(-90deg);
+      width: 100%;
+      height: 100%;
+  }
+
+  /* Suavizado en la carga del gráfico y diseño de bordes redondeados */
+  .dicapi-donut-segment {
+      transition: stroke-dasharray 1s cubic-bezier(0.4, 0, 0.2, 1);
+      fill: transparent;
+      /* stroke-linecap: round; Esta propiedad se inyectará desde el JS para que los cortes sean curvos */
+  }
+
+  /* ==========================================
+     ANIMACIÓN DE ENFOQUE EN TARJETAS (PULSO TÁCTICO)
+     ========================================== */
+  @keyframes card-focus-pulse {
+      0%   { box-shadow: 0 0 15px var(--glow-c), inset 0 0 5px var(--glow-c); border-color: var(--border-c); }
+      50%  { box-shadow: 0 0 2px transparent, inset 0 0 1px transparent; border-color: transparent; }
+      100% { box-shadow: 0 0 15px var(--glow-c), inset 0 0 5px var(--glow-c); border-color: var(--border-c); }
+  }
+  
+  .card-focus-active {
+      animation: card-focus-pulse 1.2s infinite;
+      z-index: 10; /* La eleva sutilmente sobre las demás tarjetas */
+      position: relative;
+  }
+
+  /* Animación para marcadores seleccionados o en hover */
+  .custom-marker-cctv:hover {
+      transform: scale(1.1);
+      z-index: 1000 !important;
+      transition: all 0.2s ease-out;
+  }
+
+  /* Estilos para la impresión / exportación a PDF */
+/* ==============================================
+   ESTILOS PARA IMPRESIÓN / PDF (VERSIÓN CORREGIDA)
+   ============================================== */
+
+@media print {
+  /* Forzamos que el navegador use los colores reales y gradientes */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  @page {
+    size: A4 portrait;
+    margin: 0 !important;
+  }
+
+  /* La zona de impresión ocupa todo el papel */
+  #print-zone {
+    width: 210mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .isse-page {
+    width: 210mm !important;
+    height: 297mm !important;
+    page-break-after: always !important;
+    break-after: page !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    display: flex !important;
+    flex-direction: column !important;
+    position: relative !important;
+  }
+}
+</style>

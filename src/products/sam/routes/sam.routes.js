@@ -15,7 +15,20 @@ router.get('/alertas/sedes', ctrl.getSedes);
 //test
 router.get('/ping', (req, res) => res.json({ ping: 'ok' }));
 
-// CECOM (registro manual)
-router.post('/cecom/registrar', ctrl.registrarCecom);
+//Exportar PDF
+router.post('/exportar-pdf', ctrl.exportarPDF);
+
+router.get('/noticias', ctrl.getNoticiasISSE);
+router.get('/noticias/ticker', ctrl.getNoticiasTicker);
+router.get('/efemerides', ctrl.getEfemerides);
+
+//version
+router.get('/version', ctrl.getVersion);
+
+//LiveCams
+router.get('/camaras', ctrl.getCamaras);
+
+//Noticias Ticker
+router.get('/noticias/ticker', ctrl.getTicker);
 
 module.exports = router;

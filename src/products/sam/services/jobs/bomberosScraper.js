@@ -53,6 +53,7 @@ const syncBomberos = async () => {
 
     let nuevas = 0;
     let actualizadas = 0;
+    const partes = []; // Array para almacenar los nroParte encontrados
 
     for (const tarjetaHtml of tarjetasHtml) {
       // Reconstruir el div para Cheerio
@@ -62,6 +63,7 @@ const syncBomberos = async () => {
       const nroParteMatch = tarjetaHtml.match(/Parte:\s*(\d+)/i);
       if (!nroParteMatch) continue;
       const nroParte = nroParteMatch[1].trim();
+      partes.push(nroParte); // Almacenar para la limpieza posterior
 
       // 2. Tipo de Emergencia: texto del h5, eliminar prefijo #número
       let tipoEmergencia = $('h5').text().replace(/#\d+/, '').trim() || 'NO ESPECIFICADO';
@@ -124,6 +126,14 @@ const syncBomberos = async () => {
           await existe.save();
           actualizadas++;
         }
+      }
+    }
+
+    // Limpiar emergencias que ya no están en la web
+    if (partes.length > 0) {
+      const resultado = await CgbvpAlert.deleteMany({ nroParte: { $nin: partes } });
+      if (resultado.deletedCount > 0) {
+        console.log(`🧹 [CGBVP] Se eliminaron ${resultado.deletedCount} emergencias antiguas.`);
       }
     }
 
