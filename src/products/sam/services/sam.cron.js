@@ -11,13 +11,13 @@ const initSamCrons = () => {
   cron.schedule('*/1 * * * *', () => syncIgp());
 
   // Radar Bomberos: Cada 2 minutos
-  cron.schedule('*/3 * * * *', () => syncBomberos());
+  cron.schedule('*/2 * * * *', () => syncBomberos());
   
   // Radar SUTRAN: Cada 15 minutos
-  cron.schedule('*/15 * * * *', () => syncSutran());
+  cron.schedule('*/10 * * * *', () => syncSutran());
   
   // Radar DICAPI: Cada hora (en el minuto 0)
-  cron.schedule('0 * * * *', () => syncDicapi());
+  cron.schedule('*/30 * * * *', () => syncDicapi());
 
   // Disparo inicial forzado
   syncIgp();

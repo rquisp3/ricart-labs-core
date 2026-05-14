@@ -645,3 +645,26 @@
     position: relative !important;
   }
 }
+
+/* Integración Táctica de Leaflet Attribution en el Tema */
+.leaflet-custom-theme {
+    font-family: 'console', monospace !important; /* Su fuente monospace */
+    font-size: 8px !important;
+    color: rgba(156, 163, 175, 0.7) !important; /* text-gray-400 */
+    background: rgba(10, 10, 10, 0.8) !important; /* bg-[#0a0a0a] con alfa */
+    border-radius: 4px;
+    padding: 1px 4px !important;
+    border: 1px border border-gray-800 !important;
+    bottom: 3px !important;
+    right: 3px !important;
+    line-height: 1 !important;
+}
+
+.leaflet-custom-theme a {
+    color: rgba(239, 68, 68, 0.7) !important; /* text-red-500 */
+    text-decoration: none !important;
+}
+
+.leaflet-custom-theme a:hover {
+    color: rgba(239, 68, 68, 1) !important;
+}

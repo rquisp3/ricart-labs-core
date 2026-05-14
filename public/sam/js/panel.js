@@ -301,28 +301,42 @@ function procesarDatosCompletos(datos) {
     };
 
     function parseDateGlobal(dStr) {
-        if(!dStr) return 0;
-        let str = String(dStr).trim().toUpperCase();
-        let dateMatch = str.match(/(\d{2})\/(\d{2})\/(\d{4})/);
-        if (!dateMatch) return 0;
-        let year = dateMatch[3], month = dateMatch[2], day = dateMatch[1];
-        
-        let timeMatch = str.match(/(\d{1,2}):(\d{2})(?::(\d{2}))?/);
-        let hh = "00", mm = "00", ss = "00";
-        if (timeMatch) {
-            hh = timeMatch[1].padStart(2, '0');
-            mm = timeMatch[2];
-            ss = timeMatch[3] || "00";
-            if (str.includes('P.M.') || str.includes('PM')) {
-                let hNum = parseInt(hh, 10);
-                if (hNum < 12) hh = (hNum + 12).toString();
-            } else if (str.includes('A.M.') || str.includes('AM')) {
-                let hNum = parseInt(hh, 10);
-                if (hNum === 12) hh = "00";
-            }
-        }
-        return parseInt(year + month + day + hh + mm + ss, 10);
+  if (!dStr) return 0;
+
+  const str = String(dStr).trim();
+
+  // 1. Intentar formato ISO 8601 (el que ahora entrega la API)
+  const isoDate = new Date(str);
+  if (!isNaN(isoDate.getTime())) {
+    // Convertir a número entero AAAAMMDDHHMMSS en zona horaria de Perú
+    const peruStr = isoDate.toLocaleString('sv-SE', { timeZone: 'America/Lima' });
+    return parseInt(peruStr.replace(/\D/g, '').substring(0, 14), 10);
+  }
+
+  // 2. Si no es ISO, usar la lógica original (para fechas viejas en otro formato)
+  const dateMatch = str.match(/(\d{2})\/(\d{2})\/(\d{4})/);
+  if (!dateMatch) return 0;
+
+  let [_, dd, mm, yyyy] = dateMatch;
+  let timeMatch = str.match(/(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+  let hh = "00", min = "00", ss = "00";
+
+  if (timeMatch) {
+    hh = timeMatch[1].padStart(2, '0');
+    min = timeMatch[2];
+    ss = timeMatch[3] || "00";
+
+    if (str.includes('P.M.') || str.includes('PM')) {
+      let hNum = parseInt(hh, 10);
+      if (hNum < 12) hh = (hNum + 12).toString();
+    } else if (str.includes('A.M.') || str.includes('AM')) {
+      let hNum = parseInt(hh, 10);
+      if (hNum === 12) hh = "00";
     }
+  }
+
+  return parseInt(yyyy + mm + dd + hh + min + ss, 10);
+ }
 
     /*function estandarizarFecha(dStr) {
         if(!dStr || dStr === '-') return '-';
@@ -426,6 +440,7 @@ function procesarDatosCompletos(datos) {
 
     // ================== 3. PROCESAR IGP ==================
     if(datos.igp && datos.igp.length > 0) {
+      datos.igp.sort((a, b) => parseDateGlobal(b['Fecha y Hora']) - parseDateGlobal(a['Fecha y Hora']));
       let builderHtmlIgp = '<div class="space-y-2 font-sans">';
       datos.igp.forEach(function(row, idx) {
          try {
@@ -494,15 +509,83 @@ function procesarDatosCompletos(datos) {
           return parseDateGlobal(b['Fecha y Hora']) - parseDateGlobal(a['Fecha y Hora']);
       });
       
-      let builderHtmlBomberos = '<div class="space-y-2 font-sans">';
+      const totalAlertas = datos.bomberos.length;
+      const topAlerta = datos.bomberos[0]; // Capturamos la emergencia más reciente para el HUD
+      
+      // Procesamiento del último evento para la cabecera
+      let topTipoRaw = (topAlerta['Tipo de Emergencia'] || '').toUpperCase();
+      let topPartes = topTipoRaw.split('/');
+      let topTitulo = topPartes[0].trim() || 'EMERGENCIA';
+      let topEvento = topPartes.slice(1).join(' / ').trim() || 'SIN DETALLE';
+      let topDireccion = topAlerta['Direccion'] || 'Sin dirección';
+
+      let builderHtmlBomberos = '';
+
+      // --- 1. CABECERA HUD ESTÁTICA Y SONDA DE BÚSQUEDA ---
+      builderHtmlBomberos += `
+      <div class="sticky top-0 bg-[#0a0a0a] z-10 pb-4 border-b border-gray-800 mb-4 pt-2">
+          <h3 class="text-white font-bold tracking-widest uppercase mb-3 text-xs">
+              <i class="fa-solid fa-fire-extinguisher text-red-500 mr-2"></i>Alertas Bomberos 24h (CGBVP)
+          </h3>
+          
+          <div class="bg-[#121212] border border-gray-800 rounded-lg p-3 mb-3 shadow-lg relative overflow-hidden group">
+               <div class="absolute top-0 left-0 w-full h-0.5 bg-red-500/50"></div>
+              
+              <div class="flex items-center gap-4">
+                  <div class="text-center shrink-0 pr-4 border-r border-gray-800">
+                      <p class="text-[7px] text-gray-600 font-console uppercase mb-1">Alertas</p>
+                      <span class="text-red-500 font-bold text-4xl font-console leading-none" id="hud-contador-bomberos">${totalAlertas}</span>
+                  </div>
+                  
+                  <div class="flex-1">
+                      <div class="flex justify-between items-center mb-1">
+                          <span class="text-red-400 font-bold text-[9px] tracking-widest uppercase">Último Despacho</span>
+                          <div class="relative flex h-2 w-2">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                          </div>
+                      </div>
+                      <h4 class="font-bold text-gray-200 text-[10px] leading-tight pr-2 uppercase line-clamp-1 mb-1">${topTitulo}</h4>
+                      <p class="text-gray-400 text-[9px] font-bold leading-snug uppercase line-clamp-1 mb-1">${topEvento}</p>
+                      <p class="text-amber-500/80 text-[8px] font-console line-clamp-1"><i class="fa-solid fa-location-arrow mr-1"></i>${topDireccion}</p>
+                  </div>
+              </div>
+          </div>
+
+          <div class="relative">
+              <i class="fa-solid fa-crosshairs absolute left-3 top-2.5 text-gray-500 text-sm"></i>
+              <input type="text" id="buscador-bomberos" onkeyup="filtrarRadarBomberos(this.value)" 
+                     class="w-full bg-[#121212] border border-gray-700 text-gray-300 text-xs rounded-md focus:ring-red-500 focus:border-red-500 block pl-9 p-2 font-console placeholder-gray-600 outline-none transition-colors" 
+                     placeholder="Interceptar: Tipo, Parte, Ubicación...">
+          </div>
+      </div>
+
+      <div id="lista-tarjetas-bomberos" class="flex flex-col gap-3 pb-10 font-sans">
+      `;
+
+      // --- 2. BUCLE DE TARJETAS (Single-Card Design) ---
+
+    // ================== 4. PROCESAR BOMBEROS (REDISEÑO HUD & ITEM) ==================
+    if(datos.bomberos && datos.bomberos.length > 0) {
+      
+      datos.bomberos.sort((a, b) => parseDateGlobal(b['Fecha y Hora']) - parseDateGlobal(a['Fecha y Hora']));
+      
+      const totalAlertas = datos.bomberos.length;
+      const topAlerta = datos.bomberos[0]; 
+      
+      let tarjetasHtml = '';  
+
+      // --- 1. BUCLE DE TARJETAS (Construcción y Conteo) ---
       datos.bomberos.forEach(function(row, idx) {
          try {
            counts.cgbvp.total++;
            var lat = parseFloat(row['Latitud']);
            var lng = parseFloat(row['Longitud']);
-           var estadoBomb = (row['Estado'] || '').toUpperCase();
            
-           // Extracción inteligente de Título y Evento
+           var estadoBomb = (row['Estado'] || '').toUpperCase();
+           let isCerrado = !estadoBomb.includes('ATENDIENDO');
+           if (isCerrado) counts.cgbvp.cerrado++; // Usamos sus contadores globales
+           
            let tipoEmergenciaRaw = (row['Tipo de Emergencia'] || '').toUpperCase();
            let partesEmergencia = tipoEmergenciaRaw.split('/');
            let tituloEmergencia = partesEmergencia[0].trim();
@@ -514,61 +597,274 @@ function procesarDatosCompletos(datos) {
            else if (tituloEmergencia.includes('INCENDIO')) { iconClass = 'fa-fire'; baseColor = 'red'; typeKey = 'INCENDIO'; }
            else if (tituloEmergencia.includes('MAT') || tituloEmergencia.includes('PELIGROSOS')) { iconClass = 'fa-biohazard'; baseColor = 'red'; typeKey = 'MATPEL'; }
            else if (tituloEmergencia.includes('RESCATE')) { iconClass = 'fa-life-ring'; baseColor = 'amber'; typeKey = 'RESCATE'; }
-           else if (tituloEmergencia.includes('ESPECIAL')) { iconClass = 'fa-clipboard-check'; baseColor = 'amber'; typeKey = 'SERVESP'; }
 
-           let isCerrado = !estadoBomb.includes('ATENDIENDO');
-           let colorTailwind = isCerrado ? 'green' : baseColor;
+           let colorTailwind = isCerrado ? 'gray' : baseColor;
            
-           let layerId = 'CGBVP_' + typeKey;
-           if(isCerrado) { layerId = 'CGBVP_CERRADO'; counts.cgbvp.cerrado++; } 
-           else { counts.cgbvp[typeKey.toLowerCase()]++; }
+           let badgeEstado = isCerrado
+               ? `<span class="bg-transparent border border-gray-600 text-gray-400 px-1.5 py-0.5 rounded text-[8px] font-console tracking-wider uppercase flex items-center gap-1 shadow-sm"><i class="fa-solid fa-check text-[8px]"></i>CERRADO</span>`
+               : `<span class="bg-transparent border border-red-800/80 text-red-500 px-1.5 py-0.5 rounded text-[8px] font-console tracking-wider uppercase flex items-center gap-1 shadow-sm"><i class="fa-solid fa-headset text-[8px] animate-pulse"></i>ATENDIENDO</span>`;
 
+           // ID TÁCTICO ESTRICTO (Para el enfoque desde el mapa)
+           var idAcord = 'acord-bomb-' + idx;
+           
            if (!isNaN(lat) && !isNaN(lng)) {
-              var idAcord = 'acord-bomb-' + idx;
+              let layerId = isCerrado ? 'CGBVP_CERRADO' : 'CGBVP_' + typeKey;
               var iconBomb = L.divIcon({
-                 html: '<div class="w-5 h-5 rounded-full bg-' + colorTailwind + '-500 icon-marker marker-rumble flex items-center justify-center text-white dark:text-gray-900"><i class="fa-solid ' + iconClass + ' text-[12px]"></i></div>',
+                 html: `<div class="w-5 h-5 rounded-full bg-${colorTailwind}-500 icon-marker marker-rumble flex items-center justify-center text-white"><i class="fa-solid ${iconClass} text-[12px]"></i></div>`,
                  className: '', iconSize: [20, 20], iconAnchor: [10, 10]
               });
               let marker = L.marker([lat, lng], { icon: iconBomb }).on('click', function() {
-                  enfocarDesdeMapa(lat, lng, idAcord, colorTailwind, 'ALERTAS CGBVP');
-              }).bindTooltip('<b class="font-sans text-[10px] uppercase text-'+colorTailwind+'-500">' + (row['Nro Parte'] || 'Emergencia') + '</b><br><span class="text-[9px] dark:text-gray-300">' + tituloEmergencia + '</span>', { className: 'custom-tooltip' });
+                 enfocarDesdeMapa(lat, lng, idAcord, colorTailwind, 'ALERTAS CGBVP');
+              }).bindTooltip(`<b class="font-sans text-[10px] uppercase text-${colorTailwind}-500">${row['Nro Parte'] || 'Emergencia'}</b><br><span class="text-[9px] dark:text-gray-300">${tituloEmergencia}</span>`, { className: 'custom-tooltip' });
               allMarkers.push({ marker: marker, layerId: layerId });
            }
 
-           var idAcord = 'acord-bomb-' + idx;
-           var accionClic = (!isNaN(lat) && !isNaN(lng)) ? "clickDesdeSidebar(" + lat + ", " + lng + ", '" + idAcord + "', '" + colorTailwind + "')" : "";
+           var accionClic = (!isNaN(lat) && !isNaN(lng)) ? `clickDesdeSidebar(${lat}, ${lng}, '${idAcord}', '${colorTailwind}')` : "";
            var maquinasStr = (row['Maquinas'] || 'En ruta').replace(/<[^>]+>/g, '').trim();
            if(maquinasStr === "") maquinasStr = "En ruta";
+           let direccionStr = row['Direccion'] || '-';
+           let nroParteStr = row['Nro Parte'] || '-';
+           
+           // Hora Local Directa
+           let fechaStr = formatearFechaPeru(row['Fecha y Hora']) || '-';
 
-           builderHtmlBomberos += '<div class="bg-white dark:bg-[#121212] border border-gray-200 dark:border-neutral-800 rounded shadow-sm hover:border-' + colorTailwind + '-500/50 transition-colors cursor-pointer overflow-hidden" onclick="' + accionClic + '">' +
-              '<div class="p-2.5 flex items-start gap-2.5">' +
-                '<div class="w-8 h-8 rounded bg-' + colorTailwind + '-500/20 text-' + colorTailwind + '-500 flex items-center justify-center shrink-0 border border-' + colorTailwind + '-500/30 shadow-inner">' +
-                   '<i class="fa-solid ' + iconClass + ' text-sm"></i>' +
-                '</div>' +
-                '<div class="flex-1">' +
-                  '<div class="flex justify-between items-start mb-0.5">' +
-                    '<h4 class="font-bold text-gray-900 dark:text-gray-200 text-[10px] leading-tight pr-2 uppercase line-clamp-1">' + tituloEmergencia + '</h4>' +
-                    '<span class="text-' + colorTailwind + '-500 text-[8px] font-console px-1.5 py-0.5 border border-' + colorTailwind + '-500/30 rounded bg-' + colorTailwind + '-500/10 uppercase shrink-0">' + (estadoBomb || 'CERRADO') + '</span>' +
-                  '</div>' +
-                  '<p class="text-[9px] text-gray-500 dark:text-gray-500 font-medium truncate w-56 md:w-64"><i class="fa-solid fa-location-arrow"></i> ' + (row['Direccion'] || '-') + '</p>' +
-                '</div>' +
-              '</div>' +
-              '<div id="' + idAcord + '" class="expand-content bg-gray-50 dark:bg-[#0a0a0a] border-t border-gray-100 dark:border-neutral-800 px-3">' +
-                '<div class="grid grid-cols-2 gap-2 mb-2 mt-3">' +
-                  '<div class="col-span-2"><p class="text-[8px] text-gray-400 font-console uppercase tracking-wide">Evento</p><p class="text-[10px] text-gray-800 dark:text-gray-300 font-bold uppercase">' + eventoEmergencia + '</p></div>' +
-                  '<div><p class="text-[8px] text-gray-400 font-console uppercase tracking-wide">Fecha y hora</p><p class="text-[10px] text-gray-800 dark:text-gray-300">' + (formatearFechaPeru(row['Fecha y Hora']) || '-') + '</p></div>' +
-                  '<div><p class="text-[8px] text-gray-400 font-console uppercase tracking-wide">Nro Parte</p><p class="text-[10px] text-gray-800 dark:text-gray-300">' + (row['Nro Parte'] || '-') + '</p></div>' +
-                  '<div class="col-span-2"><p class="text-[8px] text-gray-400 font-console uppercase tracking-wide">Máquinas Despachadas</p><p class="text-[10px] text-gray-800 dark:text-gray-300 font-console">' + maquinasStr + '</p></div>' +
-                '</div>' +
-                '<p class="text-[9px] text-blue-600 dark:text-blue-500 font-console text-center pb-2"><i class="fa-solid fa-earth-americas"></i> ' + lat + ', ' + lng + '</p>' +
-              '</div>' +
-            '</div>';
-         } catch(e) {}
+           let dataSearchStr = `${tituloEmergencia} ${eventoEmergencia} ${direccionStr} ${nroParteStr} ${maquinasStr} ${estadoBomb}`.toLowerCase();
+           let dataModal = encodeURIComponent(JSON.stringify({
+               lat: lat, lng: lng, tipo: tituloEmergencia, nro: nroParteStr,
+               dir: direccionStr, evento: eventoEmergencia, maq: maquinasStr, fecha: fechaStr, icon: iconClass, color: colorTailwind
+           }));
+
+           // --- TARJETA ITEM: TÍTULO IZQ, DATOS DER ---
+           tarjetasHtml += `
+           <div id="${idAcord}" class="tarjeta-hud-bombero bg-[#121212] border border-gray-800 rounded-lg hover:border-${colorTailwind}-500/50 transition-colors shadow-sm relative flex flex-col overflow-hidden group cursor-pointer p-2 min-h-0"
+                data-search="${dataSearchStr}" onclick="${accionClic}">
+                
+               <i class="fa-solid ${iconClass} text-${colorTailwind}-500/10 absolute -bottom-3 -left-4 text-[6rem] z-0 pointer-events-none"></i>
+               
+               <div class="flex justify-between items-start w-full relative z-10 mb-0.5">
+                   <h4 class="text-${colorTailwind}-400 font-bold text-[10px] uppercase leading-tight text-left flex-1 pr-2 mt-0.5">${tituloEmergencia}</h4>
+                   <div class="shrink-0 ml-2">
+                       ${badgeEstado}
+                   </div>
+               </div>
+
+               <div class="flex flex-col items-end text-right w-full pl-6 relative z-10 space-y-0.5">
+                   <p class="text-gray-500 text-[8px] font-console"><i class="fa-regular fa-clock"></i> ${fechaStr}</p>
+                   
+                   <div class="w-full overflow-hidden text-[10px] text-gray-200 font-extrabold uppercase leading-tight smart-marquee-box relative">
+    <div class="smart-marquee-text whitespace-nowrap inline-block">${direccionStr}</div>
+</div>
+                   
+                   <p class="text-gray-400 text-[8px] font-bold uppercase italic">${eventoEmergencia} <span class="text-gray-600 font-console font-normal ml-1">(N° ${nroParteStr})</span></p>
+                   <p class="text-gray-500 text-[8px] font-console uppercase">MÁQUINAS: <span class="text-amber-500 font-bold">${maquinasStr}</span></p>
+               </div>
+
+               <div class="flex justify-between items-end w-full relative z-20 mt-1 pt-1 border-t border-gray-800/50">
+                   <button onclick="abrirModalBombero(event, '${dataModal}')" 
+                           class="w-6 h-6 flex items-center justify-center border border-gray-700 rounded bg-[#1a1a1a] hover:bg-[#2a2a2a] text-gray-400 hover:text-white transition-colors">
+                       <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>
+                   </button>
+                   <div class="flex items-center gap-1 text-[8px] text-sky-500/80 font-console">
+                       <i class="fa-solid fa-location-dot"></i> <span>${lat}, ${lng}</span>
+                   </div>
+               </div>
+           </div>
+           `;
+         } catch(e) { console.error("Error procesando bombero:", e); }
       });
-      htmlListaBomberos = builderHtmlBomberos + '</div>';
-      let cardBomb = document.querySelector('div[onclick*="ALERTAS CGBVP"] p.text-xl');
-      if (cardBomb) cardBomb.innerText = datos.bomberos.length;
+
+      // --- 2. CÁLCULO DE ALERTAS ACTIVAS ---
+      // Replicamos la misma lógica que usted usó para asegurar números idénticos
+      let gravesCGBVP = counts.cgbvp.total - counts.cgbvp.cerrado;
+
+      // --- 3. CABECERA HUD SIDEBAR (Cero Padding, 100% Ancho) ---
+      let topTipoRaw = (topAlerta['Tipo de Emergencia'] || '').toUpperCase();
+      let topTitulo = topTipoRaw.split('/')[0].trim() || 'EMERGENCIA';
+      let topFechaStr = formatearFechaPeru(topAlerta['Fecha y Hora']) || '-';
+
+      let headerHtml = `
+      <div class="sticky top-0 bg-[#0a0a0a] z-[100] w-full pt-3 pb-2 border-b border-gray-800 shadow-[0_10px_20px_rgba(0,0,0,0.8)] px-0">
+          <div class="px-3">
+
+              <div class="bg-[#1a1616] border border-red-900/30 rounded-lg p-3 mb-3 relative overflow-hidden flex shadow-lg">
+                  <i class="fa-solid fa-fire text-red-500/5 absolute -right-4 -bottom-4 text-7xl"></i>
+                  
+                  <div class="w-1/3 flex flex-col justify-center border-r border-gray-700/50 pr-3">
+                      <h3 class="text-red-500 font-bold tracking-widest uppercase text-[10px] mb-1">BOMBEROS 24H</h3>
+                      <span class="text-red-500 font-bold text-5xl font-console leading-none" id="hud-contador-bomberos">${gravesCGBVP}</span>
+                      <span class="text-gray-500 font-console text-[8px] uppercase mt-1">/ ${totalAlertas} EN TOTAL</span>
+                  </div>
+                  
+                  <div class="w-2/3 pl-3 text-right flex flex-col items-end justify-center relative z-10">
+                      <span class="border border-red-800/50 text-red-500 px-2 py-0.5 rounded text-[8px] font-console tracking-wider uppercase mb-1 flex items-center gap-1 shadow-sm">
+                          <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span> ${topTitulo}
+                      </span>
+                      <p class="text-gray-400 text-[9px] font-console line-clamp-1 mb-1" id="hud-last-time-bomberos"><i class="fa-regular fa-clock"></i> ${topFechaStr}</p>
+                      <h4 class="font-bold text-gray-200 text-[10px] leading-tight pr-2 uppercase line-clamp-2" id="hud-last-alert-bomberos">
+    <span class="text-gray-500 font-console">N° ${topAlerta['Nro Parte'] || '-'}</span> <span class="mx-1 text-red-500/50">|</span> ${topAlerta['Direccion'] || ''}
+</h4>
+                  </div>
+              </div>
+
+              <div class="relative">
+                  <i class="fa-solid fa-crosshairs absolute left-3 top-2.5 text-gray-500 text-sm"></i>
+                  <input type="text" id="buscador-bomberos" onkeyup="filtrarRadarBomberos(this.value)" 
+                         class="w-full bg-[#121212] border border-gray-700 text-gray-300 text-xs rounded-md focus:ring-red-500 focus:border-red-500 block pl-9 p-2 font-console placeholder-gray-600 outline-none transition-colors" 
+                         placeholder="Interceptar: Tipo, Parte, Ubicación...">
+              </div>
+          </div>
+      </div>
+
+      <div id="lista-tarjetas-bomberos" class="pl-3 pr-1 flex flex-col gap-2 p-3 pb-10 px-0 mt-2">
+          ${tarjetasHtml}
+      </div>
+      `;
+
+      htmlListaBomberos = headerHtml;
+
+      // =========================================================
+      // ⚡ ACTUALIZACIÓN EN VIVO DE HUDS GLOBALES (MAPA Y SIDEBAR)
+      // =========================================================
+      
+      // 1. Actualiza el HUD del MAPA (usando los IDs que usted me proporcionó)
+      if(document.getElementById('hud-cgbvp-count')) document.getElementById('hud-cgbvp-count').innerText = gravesCGBVP;
+      if(document.getElementById('hud-cgbvp-total')) document.getElementById('hud-cgbvp-total').innerText = "/ " + counts.cgbvp.total + " EN TOTAL";
+      
+      // 2. Actualiza los Contadores del Sidebar (Si el panel está abierto)
+      if(document.getElementById('hud-contador-bomberos')) document.getElementById('hud-contador-bomberos').innerText = gravesCGBVP;
+      
+      // 3. Actualiza la lista de tarjetas en vivo (Si el panel está abierto)
+if(document.getElementById('lista-tarjetas-bomberos')) {
+    document.getElementById('lista-tarjetas-bomberos').innerHTML = tarjetasHtml;
+    
+    // ⚡ NUEVO: Reevaluar los anchos con la data fresca
+    setTimeout(() => {
+        if (typeof activarMarqueesInteligentes === 'function') activarMarqueesInteligentes();
+    }, 100);
+}
+      
+      // 4. Actualiza los detalles de la última alerta en la Cabecera del Sidebar (En vivo)
+      if(document.getElementById('hud-last-alert-bomberos')) document.getElementById('hud-last-alert-bomberos').innerHTML = `<span class="text-gray-500 font-console">N° ${topAlerta['Nro Parte'] || '-'}</span> <span class="mx-1 text-red-500/50">|</span> ${topAlerta['Direccion'] || ''}`;
+      if(document.getElementById('hud-last-time-bomberos')) document.getElementById('hud-last-time-bomberos').innerHTML = `<i class="fa-regular fa-clock"></i> ${topFechaStr}`;
+
     }
+// ==========================================================
+    /**
+ * SONDA DE FILTRADO TÁCTICO
+ * Intercepta pulsaciones de teclado y filtra el radar de bomberos en tiempo real.
+ */
+    window.filtrarRadarBomberos = function(termino) {
+        termino = termino.toLowerCase().trim();
+    
+    // Capturamos todas las tarjetas usando la clase que les asignamos
+    const tarjetas = document.querySelectorAll('.tarjeta-hud-bombero');
+    let visibles = 0;
+
+    tarjetas.forEach(tarjeta => {
+        // Leemos la memoria oculta de la tarjeta (data-search)
+        const dataSearch = tarjeta.getAttribute('data-search') || "";
+        
+        if (dataSearch.includes(termino)) {
+            tarjeta.style.display = 'block'; // Mostrar
+            visibles++;
+        } else {
+            tarjeta.style.display = 'none';  // Ocultar
+        }
+    });
+
+    // Actualizamos el Contador HUD
+    const contador = document.getElementById('hud-contador-bomberos');
+    if (contador) {
+        contador.innerText = visibles;
+        if (visibles === 0) {
+            contador.classList.replace('text-red-500', 'text-gray-600');
+        } else {
+            contador.classList.replace('text-gray-600', 'text-red-500');
+        }
+    }
+};
+
+// Variable global para el minimapa
+// Variable global para el minimapa
+let miniMapBombero = null;
+let miniMapMarker = null;
+
+/**
+ * ABRE EL MODAL DE CAPTURA
+ */
+window.abrirModalBombero = function(event, dataStringUrlEncoded) {
+    event.stopPropagation(); // BLOQUEA el click principal de la tarjeta
+    const data = JSON.parse(decodeURIComponent(dataStringUrlEncoded));
+    
+    document.getElementById('modal-bomb-tipo').innerText = data.tipo;
+    document.getElementById('modal-bomb-dir').innerText = data.dir;
+    document.getElementById('modal-bomb-evento').innerText = data.evento;
+    document.getElementById('modal-bomb-nro').innerText = data.nro;
+    document.getElementById('modal-bomb-fecha').innerText = data.fecha;
+    document.getElementById('modal-bomb-maq').innerText = data.maq;
+    
+    // Inyectar Coordenadas en el Modal
+    const coordsEl = document.getElementById('modal-bomb-coords');
+    if (coordsEl) coordsEl.innerText = `${data.lat}, ${data.lng}`;
+    
+    const iconEl = document.getElementById('modal-bomb-icon');
+    iconEl.className = `fa-solid ${data.icon} text-${data.color}-500`;
+
+    const modal = document.getElementById('modal-captura-bombero');
+    modal.classList.remove('hidden');
+    setTimeout(() => {
+        modal.querySelector('.transform').classList.remove('scale-95');
+        modal.querySelector('.transform').classList.add('scale-100');
+    }, 10);
+
+    modal.onclick = function(e) {
+        if (e.target === modal) cerrarModalBombero();
+    };
+
+    setTimeout(() => {
+        const tileUrl = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+
+        if (!miniMapBombero) {
+            miniMapBombero = L.map('minimapa-bombero', { zoomControl: false, attributionControl: true }).setView([data.lat, data.lng], 16);
+            L.tileLayer(tileUrl, { attribution: '&copy; OpenStreetMap' }).addTo(miniMapBombero);
+            
+            const attContainer = document.querySelector('.leaflet-control-attribution');
+            if (attContainer) attContainer.classList.add('leaflet-custom-theme', 'font-console');
+        } else {
+            miniMapBombero.setView([data.lat, data.lng], 16);
+        }
+
+        miniMapBombero.invalidateSize();
+        
+        // ⚡ RESTAURACIÓN DEL MARCADOR
+        if (miniMapMarker) miniMapBombero.removeLayer(miniMapMarker);
+        
+        // Creación del icono táctico
+        let customIcon = L.divIcon({
+             html: `<div class="w-8 h-8 rounded-full bg-${data.color}-500 flex items-center justify-center text-white border-2 border-white shadow-[0_0_15px_rgba(0,0,0,0.5)] animate-bounce"><i class="fa-solid ${data.icon} text-sm"></i></div>`,
+             className: '', 
+             iconSize: [32, 32], 
+             iconAnchor: [16, 32] // Punto de anclaje exacto en la punta inferior
+        });
+        
+        // Añadir el marcador a las coordenadas de la tarjeta
+        miniMapMarker = L.marker([data.lat, data.lng], { icon: customIcon }).addTo(miniMapBombero);
+        
+    }, 250); 
+};
+
+window.cerrarModalBombero = function() {
+    const modal = document.getElementById('modal-captura-bombero');
+    
+    // Eliminamos el onclick para evitar ejecuciones fantasmas
+    modal.onclick = null; 
+
+    modal.querySelector('.transform').classList.remove('scale-100');
+    modal.querySelector('.transform').classList.add('scale-95');
+    setTimeout(() => { modal.classList.add('hidden'); }, 200);
+};
+
+ // ==========================================================
 
     // ================== 5. PROCESAR SEDES ==================
     if(datos.sedes && datos.sedes.length > 0) {
@@ -920,7 +1216,7 @@ function procesarDatosCompletos(datos) {
            let iEst = magVal >= 6.0 ? 'RIESGO ALTO' : (magVal >= 4.5 ? 'RIESGO MOD.' : 'RIESGO LEVE');
            
            let bBadgeI = `<span class="bg-${iCol}-500/10 text-${iCol}-500 border border-${iCol}-500/30 px-1.5 py-[1px] rounded text-[9px] font-console uppercase tracking-widest flex items-center gap-1.5 dark:shadow-[0_0_5px_rgba(0,0,0,0.5)]"><div class="w-1.5 h-1.5 rounded-full bg-${iCol}-500 animate-pulse shadow-[0_0_4px_currentColor]"></div> ${iEst}</span>`;
-if(document.getElementById('hud-igp-badge')) document.getElementById('hud-igp-badge').innerHTML = bBadgeI;
+ if(document.getElementById('hud-igp-badge')) document.getElementById('hud-igp-badge').innerHTML = bBadgeI;
 
            let dDateI = `<span class="text-[9px] font-console text-gray-400 leading-none uppercase flex items-center justify-end gap-1 w-full"><i class="fa-regular fa-clock"></i> ${formatearFechaPeru(lastIgp['Fecha y Hora'])}</span>`;
            let locI = lastIgp['Referencia'] || '-';
@@ -961,6 +1257,7 @@ if(document.getElementById('hud-igp-badge')) document.getElementById('hud-igp-ba
     applyDicapiFilters();
     isFirstLoad = false;
   }
+}
 
 // ========== SIDEBARS ==========
 function openSidebar(modulo) {
@@ -982,6 +1279,14 @@ function openSidebar(modulo) {
   sidebar.classList.add('sidebar-open');
   overlay.classList.remove('hidden');
   forceMapRepaint();
+
+  // ⚡ NUEVO: Disparar la sonda después de la animación de apertura
+  // Usamos 300ms para asegurar que el panel ya se expandió y los anchos son reales
+  setTimeout(() => {
+      if (typeof activarMarqueesInteligentes === 'function') {
+          activarMarqueesInteligentes();
+      }
+  }, 300);
 }
 
 function closeSidebar() {
@@ -2375,7 +2680,7 @@ function renderizarISSE() {
         <div class="bg-white border border-slate-200 border-l-4 border-l-${i.colorClass}-500 px-3 py-2 rounded shadow-sm flex flex-col justify-between">
             <div class="flex justify-between items-start mb-1.5">
                 <span class="text-[8.5px] font-bold uppercase text-${i.colorClass}-500 bg-${i.colorClass}-50 px-1.5 py-0.5 rounded">${i['Estado']}</span>
-                <span class="text-[8px] font-console text-slate-400">${i['Fecha del evento']}</span>
+                <span class="text-[8px] font-console text-slate-400">${formatearFechaPeru(i['Fecha del evento'])}</span>
             </div>
             <h4 class="text-[10.5px] font-bold text-slate-800 leading-tight mb-1 uppercase">${i['Carretera']} <span class="text-slate-500 font-bold">- ${i.regionExt}</span></h4>
             <p class="text-[9.5px] text-slate-600 leading-tight line-clamp-2">${i['Afectación']}</p>
@@ -2385,12 +2690,12 @@ function renderizarISSE() {
     // =========================================================================
     // SECCIÓN 4: ESTADO DE PUERTOS (MGP) - PAGINADOR MATEMÁTICO 2 COLUMNAS
     // =========================================================================
-    const acortarFecha = (fechaStr) => {
+    /*const acortarFecha = (fechaStr) => {
         try {
             let p = fechaStr.split(' '); let f = p[0].split('/'); let h = p[1].split(':');
             return `${f[0]}/${f[1]} ${h[0]}:${h[1]}`;
         } catch(e) { return fechaStr; }
-    };
+    };*/
 
     let paginasMgp = '';
     const MAX_COL_HEIGHT = 810; // Altura máxima en píxeles por columna
@@ -2485,7 +2790,7 @@ function renderizarISSE() {
                             </div>
                         </td>
                         <td style="width: 55px; padding: 4px 6px 4px 0; font-size: 7px; font-family: monospace; color: #94a3b8; text-align: right; vertical-align: middle; white-space: nowrap;">
-                            ${acortarFecha(formatearFechaPeru(p.fecha))}
+                            ${(formatearFechaPeru(p.fecha))}
                         </td>
                     </tr>`;
                 }).join('');
@@ -2519,7 +2824,7 @@ function renderizarISSE() {
         <div class="bg-white border border-slate-200 border-l-4 border-l-${i.colorClass}-500 px-3 py-2 rounded shadow-sm flex flex-col justify-between">
             <div class="flex justify-between items-start mb-1.5">
                 <span class="text-[8.5px] font-bold uppercase text-${i.colorClass}-500 bg-${i.colorClass}-50 px-1.5 py-0.5 rounded">${String(i['Tipo de Emergencia']).split('/')[0].trim()}</span>
-                <span class="text-[8px] font-console text-slate-400">${i['Fecha y Hora']}</span>
+                <span class="text-[8px] font-console text-slate-400">${formatearFechaPeru(i['Fecha y Hora'])}</span>
             </div>
             <h4 class="text-[10.5px] font-bold text-slate-800 leading-tight mb-1 uppercase line-clamp-2">${i['Direccion']} <span class="text-slate-500 font-bold">- ${i.regionExt}</span></h4>
             <p class="text-[8.5px] text-slate-500 font-console uppercase mt-auto">Parte N° ${i['Nro Parte']}</p>
@@ -2543,7 +2848,7 @@ function renderizarISSE() {
                 <span class="text-[9px] font-console tracking-widest uppercase mb-1 block" style="color: ${cSecondary}; filter: brightness(1.2);">Último Sismo Registrado (Radar)</span>
                 <h4 class="text-sm font-bold uppercase mb-2 text-white leading-tight">${ultimoSismoObj['Referencia']}</h4>
                 <div class="flex flex-wrap gap-x-4 gap-y-2 text-[10px] font-console">
-                    <span class="bg-black/20 px-2 py-0.5 rounded border border-white/20"><i class="fa-regular fa-clock"></i> ${ultimoSismoObj['Fecha y Hora']}</span>
+                    <span class="bg-black/20 px-2 py-0.5 rounded border border-white/20"><i class="fa-regular fa-clock"></i> ${formatearFechaPeru(ultimoSismoObj['Fecha y Hora'])}</span>
                     <span class="bg-black/20 px-2 py-0.5 rounded border border-white/20">Prof: ${ultimoSismoObj['Profundidad']}</span>
                     <span class="bg-black/20 px-2 py-0.5 rounded border border-white/30" style="color: ${cSecondary};">Int: ${ultimoSismoObj['Intensidad']}</span>
                 </div>
@@ -2555,7 +2860,7 @@ function renderizarISSE() {
         <div class="bg-white border border-slate-200 border-l-4 border-l-${i.colorClass}-500 px-3 py-2 rounded shadow-sm flex flex-col justify-between">
             <div class="flex justify-between items-center mb-1.5">
                 <span class="text-[10px] font-bold font-console text-${i.colorClass}-500 bg-${i.colorClass}-50 px-1.5 py-0.5 rounded">M${i['Magnitud']}</span>
-                <span class="text-[8px] font-console text-slate-400">${i['Fecha y Hora']}</span>
+                <span class="text-[8px] font-console text-slate-400">${formatearFechaPeru(i['Fecha y Hora'])}</span>
             </div>
             <h4 class="text-[10px] font-bold text-slate-800 leading-snug mb-1 uppercase line-clamp-2">${i['Referencia']} <span class="text-slate-500 font-bold">- ${i.regionExt}</span></h4>
             <p class="text-[8px] text-slate-500 font-console uppercase mt-auto">PROF: ${i['Profundidad']} | INT: ${i['Intensidad']}</p>
@@ -2689,38 +2994,53 @@ function spawnSilentRadar(lat, lng, colorTailwind) {
   setTimeout(() => { if (map) map.removeLayer(tempRadar); }, 30000);
 }
 
-function enfocarDesdeMapa(lat, lng, idAcordeon, colorTailwind, modulo) {
-  openSidebar(modulo);
-  setTimeout(() => {
-    document.querySelectorAll('.expand-content').forEach(el => el.classList.remove('open'));
-    let content = document.getElementById(idAcordeon);
-    if (content) {
-      content.classList.add('open');
-      content.parentElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-      // Efecto visual en la tarjeta
-      let card = content.parentElement;
-      let glowColor = 'rgba(59, 130, 246, 0.8)';
-      let borderColor = '#3b82f6';
-      if (colorTailwind === 'red') { glowColor = 'rgba(239, 68, 68, 0.8)'; borderColor = '#ef4444'; }
-      else if (colorTailwind === 'amber') { glowColor = 'rgba(245, 158, 11, 0.8)'; borderColor = '#f59e0b'; }
-      else if (colorTailwind === 'yellow') { glowColor = 'rgba(234, 179, 8, 0.8)'; borderColor = '#eab308'; }
-      else if (colorTailwind === 'green') { glowColor = 'rgba(34, 197, 94, 0.8)'; borderColor = '#22c55e'; }
-      else if (colorTailwind === 'orange') { glowColor = 'rgba(249, 115, 22, 0.8)'; borderColor = '#f97316'; }
-
-      card.style.setProperty('--glow-c', glowColor);
-      card.style.setProperty('--border-c', borderColor);
-      card.classList.add('card-focus-active');
-
-      setTimeout(() => {
-        card.classList.remove('card-focus-active');
-        card.style.removeProperty('--glow-c');
-        card.style.removeProperty('--border-c');
-      }, 7000);
+window.enfocarDesdeMapa = function(lat, lng, idElemento, colorTailwind, tabId) {
+    
+    // =========================================================================
+    // 1. FASE DE BRECHA: ABRIR SIDEBAR DIRECTAMENTE CON SU FUNCIÓN NATIVA
+    // =========================================================================
+    if (tabId && typeof openSidebar === 'function') {
+        openSidebar(tabId); // Esto inyecta el HTML (ej. htmlListaBomberos) y abre el panel
+    } else {
+        console.warn(`SAM: No se pudo ejecutar openSidebar para [${tabId}].`);
     }
-  }, 300);
-  triggerRadarPing(lat, lng, colorTailwind);
-}
+
+    // =========================================================================
+    // 2. FASE DE ILUMINACIÓN: ESPERAR RENDERIZADO Y APLICAR RESPLANDOR
+    // =========================================================================
+    // Damos 500ms para que el innerHTML se procese y la animación del sidebar termine
+    setTimeout(() => {
+        let tarjeta = document.getElementById(idElemento);
+        
+        if (tarjeta) {
+            // A) Vuelo de cámara (Scroll suave hacia el centro)
+            tarjeta.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            
+            // B) Arsenal de Resplandor (Glow difuminado + Respiración)
+            const glowClasses = [
+                'ring-2', 
+                `ring-${colorTailwind}-500/80`, 
+                'shadow-[0_0_25px]', 
+                `shadow-${colorTailwind}-500/60`, 
+                'animate-pulse', 
+                'z-50', 
+                'scale-[1.02]',
+                'transition-all',
+                'duration-300'
+            ];
+            
+            tarjeta.classList.add(...glowClasses);
+            
+            // C) Retirada Táctica (Apagar a los 4 segundos)
+            setTimeout(() => {
+                tarjeta.classList.remove(...glowClasses);
+            }, 4000);
+            
+        } else {
+            console.error(`SAM Radar: No se encontró la tarjeta [${idElemento}] en el DOM. Posible fallo de inyección HTML.`);
+        }
+    }, 500); // 500ms de retraso estratégico
+};
 
 function clickDesdeSidebar(lat, lng, idAcordeon, colorTailwind) {
   let content = document.getElementById(idAcordeon);
@@ -3166,35 +3486,64 @@ async function refreshOSINT() {
 
 // Convierte cualquier fecha (string ISO, timestamp, Date) a formato peruano legible
 function formatearFechaPeru(raw) {
-  if (!raw) return '--/--/---- --:--:--';
+    if (!raw) return '--/--/---- --:--:--';
 
-  let date;
-  if (raw instanceof Date) {
-    date = raw;
-  } else if (typeof raw === 'number') {
-    date = new Date(raw > 1e12 ? raw : raw * 1000);
-  } else {
-    const str = String(raw).replace('T', ' ').replace('Z', '').replace(/\.\d{3}/, '');
-    date = new Date(str);
-    if (isNaN(date.getTime())) {
-      // intentar parsear dd/mm/aaaa hh:mm:ss
-      const parts = str.split(/[\s\/:-]+/);
-      if (parts.length >= 3) {
-        date = new Date(
-          parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]),
-          parseInt(parts[3]) || 0, parseInt(parts[4]) || 0, parseInt(parts[5]) || 0
-        );
-      }
+    let date;
+    if (raw instanceof Date) {
+        date = raw;
+    } else if (typeof raw === 'number') {
+        date = new Date(raw > 1e12 ? raw : raw * 1000);
+    } else {
+        const str = String(raw).replace('T', ' ').replace('Z', '').replace(/\.\d{3}/, '');
+        date = new Date(str);
+        
+        if (isNaN(date.getTime())) {
+            // Intentar parsear dd/mm/aaaa hh:mm:ss (Se limpió el regex de escapes inútiles)
+            const parts = str.split(/[\s/:-]+/); 
+            if (parts.length >= 3) {
+                date = new Date(
+                    parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]),
+                    parseInt(parts[3]) || 0, parseInt(parts[4]) || 0, parseInt(parts[5]) || 0
+                );
+            }
+        }
     }
-  }
 
-  if (isNaN(date.getTime())) return '--/--/---- --:--:--';
+    if (isNaN(date.getTime())) return '--/--/---- --:--:--';
 
-  const opciones = {
-    timeZone: 'America/Lima',
-    year: 'numeric', month: '2-digit', day: '2-digit',
-    hour: '2-digit', minute: '2-digit', second: '2-digit',
-    hour12: false
-  };
-  return date.toLocaleString('es-PE', opciones);
+    // ⚡ SOLUCIÓN: Pasamos el objeto de configuración de forma anónima (inline)
+    // Esto fuerza a VS Code a validar los literales exactos y elimina el falso error
+    return date.toLocaleString('es-PE', {
+        timeZone: 'America/Lima',
+        year: 'numeric', 
+        month: '2-digit', 
+        day: '2-digit',
+        hour: '2-digit', 
+        minute: '2-digit', 
+        second: '2-digit',
+        hour12: false
+    });
 }
+
+/**
+ * ⚡ SONDA MARQUEE INTELIGENTE
+ * Mide el ancho del texto vs el contenedor. Si desborda, inyecta el marquee.
+ */
+window.activarMarqueesInteligentes = function() {
+    // Escaneamos todas las cajas de dirección
+    const cajas = document.querySelectorAll('.smart-marquee-box');
+    
+    cajas.forEach(caja => {
+        const textoEl = caja.querySelector('.smart-marquee-text');
+        
+        // Si el texto existe y su ancho real (scrollWidth) es mayor que la caja visible (clientWidth)
+        if (textoEl && textoEl.scrollWidth > caja.clientWidth) {
+            const texto = textoEl.innerText;
+            // 🚀 Mutación Táctica: Lo transformamos en un marquee móvil
+            caja.innerHTML = `<marquee scrollamount="4" class="w-full text-gray-200 font-extrabold uppercase">${texto}</marquee>`;
+        } else if (textoEl) {
+            // 🛡️ Si entra perfectamente, le aplicamos un truncate por seguridad visual
+            textoEl.classList.add('truncate');
+        }
+    });
+};

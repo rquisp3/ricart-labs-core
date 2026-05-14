@@ -12,23 +12,22 @@ router.get('/alertas/bomberos', ctrl.getBomberos);
 router.get('/alertas/puertos', ctrl.getPuertos);
 router.get('/alertas/sedes', ctrl.getSedes);
 
-//test
+// Test
 router.get('/ping', (req, res) => res.json({ ping: 'ok' }));
 
-//Exportar PDF
+// Exportar PDF
 router.post('/exportar-pdf', ctrl.exportarPDF);
-
 router.get('/noticias', ctrl.getNoticiasISSE);
 router.get('/noticias/ticker', ctrl.getNoticiasTicker);
 router.get('/efemerides', ctrl.getEfemerides);
 
-//version
+// Version
 router.get('/version', ctrl.getVersion);
 
-//LiveCams
+// LiveCams
 router.get('/camaras', ctrl.getCamaras);
 
-//Noticias Ticker
+// Noticias Ticker
 router.get('/noticias/ticker', ctrl.getTicker);
 
 module.exports = router;

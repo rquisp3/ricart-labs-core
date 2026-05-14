@@ -335,7 +335,7 @@
         <i class="fa-solid fa-xmark"></i>
       </button>
     </div>
-    <div id="sidebar-content" class="flex-1 overflow-y-auto p-3 scroll-smooth">
+    <div id="sidebar-content" class="flex-1 overflow-y-auto p-0 scroll-smooth">
       <div class="flex flex-col items-center justify-center h-full opacity-50">
         <i class="fa-solid fa-lock text-3xl mb-3 text-gray-400 dark:text-gray-600"></i>
         <p class="text-xs font-console text-gray-500 dark:text-gray-500 text-center uppercase tracking-widest">Esperando enlace</p>
@@ -459,6 +459,57 @@
       <div id="isse-report-container" class="w-full flex-1 p-8 flex flex-col items-center gap-8 pb-20">
           </div>
   </div>
+
+  <div id="modal-captura-bombero" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm hidden transition-opacity">
+    
+    <div class="bg-gray-50 dark:bg-[#121212] w-full h-full md:h-auto md:max-w-md md:rounded-xl shadow-2xl flex flex-col overflow-hidden transform transition-transform scale-95 border border-gray-300 dark:border-gray-700">
+        
+        <div id="modal-bomb-header" class="px-4 py-3 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center bg-white dark:bg-[#1a1a1a]">
+            <h3 class="font-bold text-gray-800 dark:text-gray-200 text-xs tracking-widest uppercase flex items-center gap-2">
+                <i id="modal-bomb-icon" class="fa-solid fa-fire text-red-500"></i>
+                <span id="modal-bomb-tipo">TIPO EMERGENCIA</span>
+            </h3>
+            <button onclick="cerrarModalBombero()" class="text-gray-400 hover:text-red-500 transition-colors w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto">
+            <div id="minimapa-bombero" class="w-full h-48 md:h-56 bg-gray-300 dark:bg-gray-800 relative z-0"></div>
+            
+            <div class="p-4 space-y-3 relative z-10 bg-white dark:bg-[#121212]">
+                <div>
+                    <p class="text-[9px] text-gray-500 font-console tracking-widest uppercase">Dirección de la Emergencia</p>
+                    <p id="modal-bomb-dir" class="text-sm font-extrabold text-gray-900 dark:text-white uppercase leading-tight mt-1"></p>
+                </div>
+                
+                <div class="bg-gray-100 dark:bg-[#1a1a1a] rounded-lg p-3 border border-gray-200 dark:border-gray-800">
+                    <p class="text-[9px] text-gray-500 font-console tracking-widest uppercase mb-1">Detalle del Evento</p>
+                    <p id="modal-bomb-evento" class="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase italic"></p>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <p class="text-[9px] text-gray-500 font-console tracking-widest uppercase">N° Parte</p>
+                        <p id="modal-bomb-nro" class="text-xs font-bold text-gray-800 dark:text-gray-300 font-console mt-0.5"></p>
+                    </div>
+                    <div>
+                        <p class="text-[9px] text-gray-500 font-console tracking-widest uppercase">Fecha y Hora</p>
+                        <p id="modal-bomb-fecha" class="text-xs font-bold text-gray-800 dark:text-gray-300 font-console mt-0.5"></p>
+                    </div>
+                    <div>
+                        <p class="text-[9px] text-gray-500 font-console tracking-widest uppercase">Coordenadas</p>
+                        <p id="modal-bomb-coords" class="text-xs font-bold text-sky-500 font-console mt-0.5"></p>
+                    </div>
+                    <div>
+                        <p class="text-[9px] text-gray-500 font-console tracking-widest uppercase">Unidades</p>
+                        <p id="modal-bomb-maq" class="text-xs font-bold text-amber-600 dark:text-amber-500 mt-0.5 line-clamp-2"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 </body>
 </html>

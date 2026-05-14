@@ -16,12 +16,12 @@ const formatearSutran = (docs) =>
     'Fecha de actualización': r.updatedAt ? r.updatedAt.toISOString() : '',
     'Afectación': r.restriccion || '',
     'Carretera': r.via || '',
-    'Ubigeo': '',                         // no lo tenemos aún
+    'Ubigeo': '',
     'Coordenada': r.location?.coordinates
       ? `${r.location.coordinates[1]}, ${r.location.coordinates[0]}`
       : '',
     'Evento': r.tipoEvento || '',
-    'Fuente': '',                        // no lo tenemos aún
+    'Fuente': '',
     'Pasajeros Detenidos': '',
     'Mercancías Detenidas': ''
   }));
@@ -87,10 +87,27 @@ const formatearCecom = (docs) =>
     'Estado': r.estado
   }));
 
+// ==================================================================
+// 🛡️ MOTOR DE CACHÉ EN MEMORIA (RAM)
+// ==================================================================
+let cacheTodasLasAlertas = null;
+let ultimaVezActualizado = 0;
+// Tiempo de vida del escudo: 30 segundos en milisegundos
+const TIEMPO_VIDA_CACHE_MS = 30000; 
+
 // ------------------------------------------------------------------
-// Servicio principal
+// Servicio principal (/todas)
 // ------------------------------------------------------------------
 const obtenerDatosCompletos = async () => {
+  const ahora = Date.now();
+
+  // 1. INTERCEPCIÓN TÁCTICA: ¿El escudo está activo?
+  if (cacheTodasLasAlertas && (ahora - ultimaVezActualizado < TIEMPO_VIDA_CACHE_MS)) {
+    // Retornamos directamente de la RAM (0 impacto en DB)
+    return cacheTodasLasAlertas; 
+  }
+
+  // 2. ESCUDO VENCIDO: Desplegamos la consulta a MongoDB
   const [
     sutranDocs,
     igpDocs,
@@ -98,29 +115,36 @@ const obtenerDatosCompletos = async () => {
     dicapiDocs,
     sedesDocs,
     cecomDocs,
-    livecamsDocs  // Aún no se usa en el formato unificado, pero lo tenemos
+    livecamsDocs
   ] = await Promise.all([
     SutranAlert.find().lean(),
     IgpAlert.find().sort({ fechaHora: -1 }).lean(),
     CgbvpAlert.find().lean(),
     DicapiPort.find().lean(),
     Sede.find().lean(),
-    [], // CECOM todavía no tiene modelo, lo añadiremos después
+    [], // CECOM
     LiveCam.find().lean()
   ]);
 
-  return {
+  const dataFormateada = {
     sutran: formatearSutran(sutranDocs),
     igp: formatearIgp(igpDocs),
     bomberos: formatearBomberos(bomberosDocs),
     sedes: formatearSedes(sedesDocs),
     cecom: formatearCecom(cecomDocs),
     dicapi: formatearDicapi(dicapiDocs),
-    // livecams se puede devolver en un endpoint aparte
   };
+
+  // 3. RECARGA DE ESCUDO: Guardamos en la memoria y reiniciamos el reloj
+  cacheTodasLasAlertas = dataFormateada;
+  ultimaVezActualizado = ahora;
+
+  return dataFormateada;
 };
 
-// También exportamos funciones individuales para endpoints específicos
+// ------------------------------------------------------------------
+// Servicios individuales (Para endpoints específicos si los usa)
+// ------------------------------------------------------------------
 const obtenerSismos = async () => {
   const docs = await IgpAlert.find().sort({ fechaHora: -1 }).lean();
   return formatearIgp(docs);
@@ -146,9 +170,7 @@ const obtenerSedes = async () => {
   return formatearSedes(docs);
 };
 
-// Obtener cámaras activas
 const obtenerCamaras = async () => {
-  const LiveCam = require('../models/LiveCams'); // Asegúrate de que el archivo se llame LiveCams.js
   const cams = await LiveCam.find({ estado: 'ACTIVO' }).lean();
   return cams.map(c => ({
     id: c.idCamara,
@@ -160,8 +182,6 @@ const obtenerCamaras = async () => {
     proveedor: c.proveedor
   }));
 };
-
-
 
 module.exports = {
   obtenerDatosCompletos,
