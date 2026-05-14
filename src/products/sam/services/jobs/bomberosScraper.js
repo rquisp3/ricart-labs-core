@@ -57,7 +57,11 @@ const parseFechaBomberos = (fechaStr) => {
     if (ampm.toLowerCase().includes('p') && hora < 12) hora += 12;
     if (ampm.toLowerCase().includes('a') && hora === 12) hora = 0;
     
-    return new Date(yyyy, parseInt(mm, 10) - 1, dd, hora, min, ss);
+    // Guardar en UTC explícitamente
+    return new Date(Date.UTC(
+      parseInt(yyyy), parseInt(mm) - 1, parseInt(dd),
+      hora, parseInt(min), parseInt(ss)
+    ));
   } catch (e) {
     return new Date();
   }

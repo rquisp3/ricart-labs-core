@@ -2,35 +2,42 @@ const axios = require('axios');
 const SutranAlert = require('../../models/SutranAlert');
 
 // ------------------------------------------------------
-// Helper para parsear fechas SUTRAN (formato "DD/MM/YYYY HH:MM:SS")
+// Helper para combinar fecha (YYYY-MM-DD) con hora de captura en UTC
 // ------------------------------------------------------
-const parsearFechaSutran = (fechaStr) => {
+const combinarFechaHoraUTC = (fechaStr) => {
   if (!fechaStr) return new Date();
-  const regex = /(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2}):(\d{2})/;
-  const match = String(fechaStr).match(regex);
-  if (!match) return new Date(); // fallback a ahora
-  const [_, dd, mm, yyyy, hh, min, ss] = match;
-  return new Date(yyyy, parseInt(mm, 10) - 1, dd, hh, min, ss);
+  const match = String(fechaStr).match(/(\d{4})-(\d{2})-(\d{2})/);
+  if (!match) return new Date();   // fallback
+
+  const [_, yyyy, mm, dd] = match;
+  const ahora = new Date();        // hora actual del servidor (UTC si está configurado así)
+  return new Date(Date.UTC(
+    parseInt(yyyy), parseInt(mm) - 1, parseInt(dd),
+    ahora.getUTCHours(), ahora.getUTCMinutes(), ahora.getUTCSeconds()
+  ));
 };
 
 // ------------------------------------------------------
-// Scraper de SUTRAN – Lógica original de GAS + mejoras Node.js
+// Scraper de SUTRAN – Nuevo endpoint oficial y modelo ampliado
 // ------------------------------------------------------
 const syncSutran = async () => {
   console.log('🛣️ [SUTRAN] Radar escaneando estado de vías...');
   try {
-    const url = 'http://gis.sutran.gob.pe/alerta_sutran/script_cgm/carga_xlsx.php?tipo=MAPA';
-    const { data } = await axios.get(url, {
+    const url = 'https://gis.sutran.gob.pe/mapa_interactivo_alertas/carga_xlsx.php';
+    const respuesta = await axios.post(url, 'tipo=MAPA', {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Accept': 'application/json, text/plain, */*',
         'Accept-Language': 'es-419,es;q=0.9',
+        'Content-Type': 'application/x-www-form-urlencoded',
         'Cache-Control': 'no-cache'
       },
       timeout: 30000
     });
 
-    // 1. Juntar las tres categorías (normal, restringido, interrumpido)
+    const data = respuesta.data;
+
+    // Unificar las tres categorías (normal, restringido, interrumpido)
     const categorias = ['normal', 'restringido', 'interrumpido'];
     let todasLasAlertas = [];
     categorias.forEach(cat => {
@@ -50,67 +57,59 @@ const syncSutran = async () => {
     let yaExistentes = 0;
 
     for (const marcador of todasLasAlertas) {
-      const prop = marcador.properties || {};
+      // El objeto puede venir directamente con los campos o dentro de "properties"
+      const prop = marcador.properties || marcador;
 
-      // Coordenadas (con fallback a geometry)
+      // Coordenadas
       let lat = parseFloat(prop.latitud || prop.LATITUD || prop.lat);
-      let lon = parseFloat(prop.longitud || prop.LONGITUD || prop.lon);
-      if ((isNaN(lat) || isNaN(lon)) && marcador.geometry && marcador.geometry.coordinates) {
-        lon = parseFloat(marcador.geometry.coordinates[0]);
+      let lng = parseFloat(prop.longitud || prop.LONGITUD || prop.lon);
+      if ((isNaN(lat) || isNaN(lng)) && marcador.geometry && marcador.geometry.coordinates) {
+        lng = parseFloat(marcador.geometry.coordinates[0]);
         lat = parseFloat(marcador.geometry.coordinates[1]);
       }
 
-      // Generar ID virtual (misma lógica del GAS: hash simple de coordenadas+fecha+carretera)
-      const coordStr = `${isNaN(lat) ? '' : lat}, ${isNaN(lon) ? '' : lon}`;
+      // Datos para el identificador único (hash)
+      const coordStr = (!isNaN(lat) && !isNaN(lng)) ? `${lat}, ${lng}` : 'SIN_COORDS';
       const fechaEvento = prop.fecha_evento || '';
       const carretera = prop.nombre_carretera || '';
       const semilla = coordStr + fechaEvento + carretera;
-      
-      // Hash determinista (sin crypto, como el GAS original)
+
       let hash = 0;
       for (let i = 0; i < semilla.length; i++) {
         const char = semilla.charCodeAt(i);
         hash = ((hash << 5) - hash) + char;
-        hash = hash & hash; // convertir a entero de 32 bits
+        hash = hash & hash;
       }
-      const idVirtual = `SUT-${Math.abs(hash)}`; // Ej: SUT-14839284
+      const idVirtual = `SUT-${Math.abs(hash)}`;
 
-      // ¿Ya existe?
       const existe = await SutranAlert.findOne({ idAlerta: idVirtual });
       if (existe) {
         yaExistentes++;
         continue;
       }
 
-      // Parsear fecha de inicio
-      const fechaInicio = fechaEvento ? parsearFechaSutran(fechaEvento) : new Date();
+      // Fecha combinada (fecha del evento + hora de captura en UTC)
+      const fechaInicio = combinarFechaHoraUTC(fechaEvento);
 
-      // Mapeo de campos según el esquema
-      const via = carretera || 'Vía no especificada';
-      const sentido = prop.sentido || prop.SENTIDO || 'Ambos';
-      const kilometro = prop.km || prop.KM || prop.kilometro || 'S/N';
-      
-      let restriccion = (prop.estado || prop.afectacion || '').toUpperCase().trim();
-      if (!restriccion) restriccion = 'INTERRUMPIDO';
-      
-      const tipoEvento = prop.evento || prop.EVENTO || prop.tipo_evento || 'Incidente en la vía';
-
-      // Construir documento
+      // Campos según el nuevo modelo
       const nuevaAlerta = {
         idAlerta: idVirtual,
         fechaInicio,
-        via,
-        sentido,
-        kilometro,
-        restriccion,
-        tipoEvento,
+        tipoAlerta: prop.tipo_alerta_ || '',
+        estado: prop.estado || '',
+        evento: prop.evento || '',
+        ubigeo: prop.ubigeo || '',
+        ubicacion: `${prop.nombre_carretera || ''} ${prop.afectacion || ''} ${prop.codigo_via || ''}`.trim(),
+        fuente: prop.fuente || '',
+        motivo: prop.motivo || '',
+        codigoVia: prop.codigo_via || '',
+        nombreCarretera: prop.nombre_carretera || ''
       };
 
-      // Solo agregar location si hay coordenadas válidas
-      if (!isNaN(lat) && !isNaN(lon)) {
+      if (!isNaN(lat) && !isNaN(lng)) {
         nuevaAlerta.location = {
           type: 'Point',
-          coordinates: [lon, lat] // GeoJSON: [longitud, latitud]
+          coordinates: [lng, lat]
         };
       }
 
@@ -120,13 +119,13 @@ const syncSutran = async () => {
 
     console.log(`🟢 [SUTRAN] Sincronización completada. Nuevas: ${nuevas} | Ya existentes: ${yaExistentes}`);
 
-    // Opcional: límite máximo de registros (ej. 2000) para no sobrecargar la colección
+    // Límite máximo de registros (2000)
     const MAX_REGISTROS = 2000;
     const total = await SutranAlert.countDocuments();
     if (total > MAX_REGISTROS) {
       const excedentes = total - MAX_REGISTROS;
       const antiguos = await SutranAlert.find()
-        .sort({ fechaInicio: 1 }) // más antiguos primero
+        .sort({ fechaInicio: 1 })
         .limit(excedentes)
         .select('_id');
       const idsParaBorrar = antiguos.map(doc => doc._id);

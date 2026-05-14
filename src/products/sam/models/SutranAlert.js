@@ -2,16 +2,19 @@ const mongoose = require('mongoose');
 
 const sutranAlertSchema = new mongoose.Schema({
   idAlerta: { type: String, required: true, unique: true, index: true },
-  fechaInicio: { type: Date, required: true },
-  via: { type: String, trim: true },
-  sentido: { type: String, trim: true },
-  kilometro: { type: String, trim: true },
-  restriccion: { type: String, trim: true }, // Ej: "Paso alterno", "Bloqueo total"
-  tipoEvento: { type: String, trim: true }, // Ej: "Factor Climatológico", "Huelga"
+  fechaInicio: { type: Date, required: true },          // fecha + hora de captura en UTC
+  tipoAlerta: { type: String, trim: true },             // ej. 'VIGENTE'
+  estado: { type: String, trim: true },                 // ej. 'TRANSITO NORMAL'
+  evento: { type: String, trim: true },                 // ej. 'DESLIZAMIENTO DE PIEDRAS Y ROCAS'
+  ubigeo: { type: String, trim: true },
+  ubicacion: { type: String, trim: true },              // concatenación de carretera + afectación + código vía
+  fuente: { type: String, trim: true },
+  motivo: { type: String, trim: true },
+  codigoVia: { type: String, trim: true },
+  nombreCarretera: { type: String, trim: true },
   location: {
     type: { type: String, enum: ['Point'], default: 'Point' },
-    // A veces Sutran no da coordenadas exactas, por lo que no lo hacemos required
-    coordinates: { type: [Number] } 
+    coordinates: { type: [Number] }                     // [longitud, latitud]
   }
 }, { timestamps: true, versionKey: false });
 

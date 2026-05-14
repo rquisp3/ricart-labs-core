@@ -40,10 +40,10 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet-velocity@1.6.0/dist/leaflet-velocity.min.css" />
   <script src="https://unpkg.com/leaflet-velocity@1.6.0/dist/leaflet-velocity.min.js"></script>
   
-  <script src="/sam/js/auth.js"></script>
-  <script src="/sam/js/api.js"></script>
-  <script src="/sam/js/panel.js"></script>
-  <link rel="stylesheet" href="/sam/sam.css">
+  <script src="/sam-engine/js/auth.js"></script>
+  <script src="/sam-engine/js/api.js"></script>
+  <script src="/sam-engine/js/panel.js"></script>
+  <link rel="stylesheet" href="/sam-engine/sam.css">
 
 </head>
 <body class="bg-gray-100 dark:bg-[#050505] text-gray-800 dark:text-gray-200 transition-colors duration-300">
@@ -509,6 +509,30 @@
             </div>
         </div>
     </div>
+</div>
+
+<!-- Modal de Captura SUTRAN (nuevos campos) -->
+<div id="modal-captura-sutran" class="hidden fixed inset-0 z-[8000] bg-black/80 backdrop-blur-sm flex items-center justify-center">
+  <div class="transform scale-95 transition-transform duration-200 bg-[#121212] border border-gray-800 rounded-lg w-[380px] shadow-2xl">
+    <div class="p-4 border-b border-gray-800 flex justify-between items-center">
+      <h3 class="font-bold text-cyan-400 uppercase tracking-widest text-sm"><i class="fa-solid fa-road-barrier mr-2"></i>Detalle SUTRAN</h3>
+      <button onclick="cerrarModalSutran()" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="p-4 space-y-3 text-sm">
+      <div class="grid grid-cols-2 gap-3">
+        <div><span class="text-gray-500 text-[10px] uppercase">Ubicación</span><p id="modal-sutran-ubicacion" class="text-white font-bold"></p></div>
+        <div><span class="text-gray-500 text-[10px] uppercase">Estado</span><p id="modal-sutran-estado" class="text-white font-bold"></p></div>
+        <div><span class="text-gray-500 text-[10px] uppercase">Fecha</span><p id="modal-sutran-fecha" class="text-white"></p></div>
+        <div><span class="text-gray-500 text-[10px] uppercase">Tipo Alerta</span><p id="modal-sutran-tipo" class="text-white"></p></div>
+        <div class="col-span-2"><span class="text-gray-500 text-[10px] uppercase">Evento</span><p id="modal-sutran-evento" class="text-white"></p></div>
+        <div><span class="text-gray-500 text-[10px] uppercase">Ubigeo</span><p id="modal-sutran-ubigeo" class="text-white"></p></div>
+        <div><span class="text-gray-500 text-[10px] uppercase">Fuente</span><p id="modal-sutran-fuente" class="text-white"></p></div>
+        <div><span class="text-gray-500 text-[10px] uppercase">Motivo</span><p id="modal-sutran-motivo" class="text-white"></p></div>
+      </div>
+      <div class="h-32 bg-black rounded border border-gray-700" id="minimapa-sutran"></div>
+      <div class="text-right text-[10px] text-cyan-500 font-console" id="modal-sutran-coords"></div>
+    </div>
+  </div>
 </div>
 
 </body>

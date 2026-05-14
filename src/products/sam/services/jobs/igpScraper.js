@@ -36,10 +36,16 @@ const syncIgp = async () => {
       return;
     }
 
-    // 3. Parseo seguro de fecha
+    // 3. Parseo de fecha convirtiendo explícitamente a UTC
+    //    La API del IGP entrega la fecha en hora peruana (UTC-5) sin zona horaria.
+    //    Añadimos '-05:00' para que new Date() la interprete correctamente y la guarde en UTC.
     let fecha = new Date();
     if (data.fecha_hora) {
-      const f = new Date(data.fecha_hora);
+      const fechaStr = String(data.fecha_hora).trim();
+      const fechaConZona = fechaStr.includes('Z') || fechaStr.includes('+') || fechaStr.includes('-') 
+        ? fechaStr 
+        : fechaStr + '-05:00';
+      const f = new Date(fechaConZona);
       if (!isNaN(f.getTime())) fecha = f;
     }
 

@@ -337,108 +337,283 @@ function procesarDatosCompletos(datos) {
 
   return parseInt(yyyy + mm + dd + hh + min + ss, 10);
  }
+    //////////////////////////////////////////////////////////////////////////////////////////
+    // ================== 1.PROCESAR SUTRAN ==============================================
+    //////////////////////////////////////////////////////////////////////////////////////////
 
-    /*function estandarizarFecha(dStr) {
-        if(!dStr || dStr === '-') return '-';
-        let str = String(dStr).trim().toUpperCase();
-        let dateMatch = str.match(/(\d{2})\/(\d{2})\/(\d{4})/);
-        if (!dateMatch) return dStr; 
-        let dd = dateMatch[1], mm = dateMatch[2], yyyy = dateMatch[3];
-        
-        let timeMatch = str.match(/(\d{1,2}):(\d{2})(?::(\d{2}))?/);
-        if (timeMatch) {
-            let hh = timeMatch[1].padStart(2, '0');
-            let min = timeMatch[2];
-            let ss = timeMatch[3] || "00";
-            if (str.includes('P.M.') || str.includes('PM')) {
-                let hNum = parseInt(hh, 10);
-                if (hNum < 12) hh = (hNum + 12).toString().padStart(2, '0');
-            } else if (str.includes('A.M.') || str.includes('AM')) {
-                let hNum = parseInt(hh, 10);
-                if (hNum === 12) hh = "00";
-            }
-            return dd + '/' + mm + '/' + yyyy + ' ' + hh + ':' + min + ':' + ss;
-        }
-        return dd + '/' + mm + '/' + yyyy + ' 00:00:00';
-    }*/
+// ================== 1. PROCESAR SUTRAN (REDISEÑO COMPLETO CON NUEVAS CLAVES) ==================
+if(datos.sutran && datos.sutran.length > 0) {
+  datos.sutran.sort((a, b) => parseDateGlobal(b.fechaHora_evento) - parseDateGlobal(a.fechaHora_evento));
 
-    
-    // ================== 2. PROCESAR SUTRAN ==================
-    if(datos.sutran && datos.sutran.length > 0) {
-      datos.sutran.sort(function(a, b) {
-          return parseDateGlobal(b['Fecha del evento']) - parseDateGlobal(a['Fecha del evento']);
-      });
+  const totalAlertas = datos.sutran.length;
+  const topAlerta = datos.sutran[0];
 
-      let builderHtmlSutran = '<div class="space-y-2 font-sans">'; 
-      datos.sutran.forEach(function(row, idx) {
-        try {
-          counts.sutran.total++;
-          
-          // FIX TÁCTICO: Limpieza de palabra y homologación de texto
-          let estadoLimpio = (row['Estado'] || 'NORMAL').toUpperCase().replace('TRÁNSITO ', '').replace('TRANSITO ', '').trim();
-          let colorTailwind = 'green';
-          let layerId = 'SUTRAN_NORMAL';
-          
-          // FIX TÁCTICO: Cambio de Orange a Amber para igualar paleta SAM_
-          if (estadoLimpio.includes('INTERRUMPIDO')) { colorTailwind = 'red'; counts.sutran.interrumpido++; layerId = 'SUTRAN_INTERRUMPIDO'; }
-          else if (estadoLimpio.includes('RESTRINGIDO')) { colorTailwind = 'amber'; counts.sutran.restringido++; layerId = 'SUTRAN_RESTRINGIDO'; }
-          else { counts.sutran.normal++; estadoLimpio = 'NORMAL'; }
+  let tarjetasHtml = '';
 
-          let lat = null, lng = null;
-          let coordsStr = String(row['Coordenada'] || '');
-          if (coordsStr.includes(',')) {
-            let pts = coordsStr.split(',');
-            lat = parseFloat(pts[0].trim()); lng = parseFloat(pts[1].trim());
-            if (lat < -50 || lat > 0) { let temp = lat; lat = lng; lng = temp; }
-            if(!isNaN(lat) && !isNaN(lng)) {
-              let idAcordeon = 'acord-sutran-' + idx;
-              let iconSutran = L.divIcon({
-                 html: '<div class="w-5 h-5 rounded-full bg-' + colorTailwind + '-500 icon-marker marker-rumble flex items-center justify-center text-white dark:text-gray-900"><i class="fa-solid fa-road-barrier text-[12px]"></i></div>',
-                 className: '', iconSize: [20, 20], iconAnchor: [10, 10]
-              });
-              let marker = L.marker([lat, lng], { icon: iconSutran }).on('click', function() {
-                  enfocarDesdeMapa(lat, lng, idAcordeon, colorTailwind, 'ALERTAS SUTRAN');
-              }).bindTooltip('<b class="font-sans text-[10px] uppercase text-'+colorTailwind+'-500">' + (row['Carretera'] || 'Vía') + '</b><br><span class="text-[9px] dark:text-gray-300">' + (row['Afectación'] || '') + '</span>', { className: 'custom-tooltip' });
-              allMarkers.push({ marker: marker, layerId: layerId }); 
-            }
-          }
+  datos.sutran.forEach(function(row, idx) {
+    try {
+      counts.sutran.total++;
 
-          let idAcordeon = 'acord-sutran-' + idx;
-          let accionClic = (!isNaN(lat) && !isNaN(lng)) ? "clickDesdeSidebar(" + lat + ", " + lng + ", '" + idAcordeon + "', '" + colorTailwind + "')" : "";
-          
-          builderHtmlSutran += '<div class="bg-white dark:bg-[#121212] border border-gray-200 dark:border-neutral-800 rounded shadow-sm hover:border-' + colorTailwind + '-500/50 transition-colors cursor-pointer overflow-hidden" onclick="' + accionClic + '">' +
-              '<div class="p-2.5 flex items-start gap-2">' +
-                '<div class="w-1 h-6 rounded bg-' + colorTailwind + '-500 mt-1 shrink-0"></div>' +
-                '<div class="flex-1">' +
-                  '<div class="flex justify-between items-start mb-0.5">' +
-                    '<h4 class="font-bold text-gray-900 dark:text-gray-200 text-[10px] leading-tight pr-2 uppercase line-clamp-1">' + (row['Carretera'] || 'Vía sin nombre') + '</h4>' +
-                    '<span class="text-' + colorTailwind + '-500 text-[8px] font-console px-1 border border-' + colorTailwind + '-500/30 rounded bg-' + colorTailwind + '-500/10 uppercase shrink-0">' + estadoLimpio + '</span>' +
-                  '</div>' +
-                  '<p class="text-[9px] text-gray-500 dark:text-gray-500 font-medium truncate w-56 md:w-64"><i class="fa-solid fa-location-arrow"></i> ' + (row['Afectación'] || 'Sin sector') + '</p>' +
-                '</div>' +
-              '</div>' +
-              '<div id="' + idAcordeon + '" class="expand-content bg-gray-50 dark:bg-[#0a0a0a] border-t border-gray-100 dark:border-neutral-800 px-3">' +
-                '<div class="grid grid-cols-2 gap-2 mb-2 mt-3">' +
-                  '<div class="col-span-2"><p class="text-[8px] text-gray-400 font-console uppercase tracking-wide">Evento</p><p class="text-[10px] text-gray-800 dark:text-gray-300 font-bold uppercase">' + (row['Evento'] || 'SIN DETALLE') + '</p></div>' +
-                  '<div><p class="text-[8px] text-gray-400 font-console uppercase tracking-wide">Fecha Evento</p><p class="text-[10px] text-gray-800 dark:text-gray-300">' + (formatearFechaPeru(row['Fecha del evento']) || '-') + '</p></div>' +
-                  '<div><p class="text-[8px] text-gray-400 font-console uppercase tracking-wide">Ubigeo</p><p class="text-[10px] text-gray-800 dark:text-gray-300">' + (row['Ubigeo'] || '-') + '</p></div>' +
-                  '<div class="col-span-2"><p class="text-[8px] text-gray-400 font-console uppercase tracking-wide">Fuente</p><p class="text-[10px] text-gray-800 dark:text-gray-300 uppercase">' + (row['Fuente'] || 'N/A') + '</p></div>' +
-                '</div>' +
-                '<p class="text-[9px] text-blue-600 dark:text-blue-500 font-console text-center pb-2"><i class="fa-solid fa-earth-americas"></i> ' + coordsStr + '</p>' +
-              '</div>' +
-            '</div>';
-        } catch(e) {}
-      });
-      htmlListaSutran = builderHtmlSutran + '</div>';
+      // Determinar estado y color
+      const estadoRaw = (row.estado || 'NORMAL').toUpperCase();
+      let estadoLimpio = estadoRaw.replace('TRÁNSITO ', '').replace('TRANSITO ', '').trim();
+      let colorTailwind = 'green';
+      
+      let iconClass = 'fa-road';           // icono por defecto
+let baseColor = 'cyan';             // color por defecto (para el ícono en la tarjeta)
+const motivo = (row.motivo || '').toUpperCase();
 
-      let counterEl = document.getElementById('counter-sutran');
-      if (counterEl) counterEl.innerText = counts.sutran.interrumpido + counts.sutran.restringido;
-      if(document.getElementById('dash-int')) document.getElementById('dash-int').innerText = counts.sutran.interrumpido;
-      if(document.getElementById('dash-res')) document.getElementById('dash-res').innerText = counts.sutran.restringido;
-      if(document.getElementById('dash-nor')) document.getElementById('dash-nor').innerText = counts.sutran.normal;
+if (motivo.includes('CLIMATOLOGICO')) {
+  iconClass = 'fa-cloud-rain';
+  baseColor = 'blue';
+} else if (motivo.includes('ACCIDENTE')) {
+  iconClass = 'fa-car-burst';
+  baseColor = 'red';
+} else if (motivo.includes('INFRAESTRUCTURA')) {
+  iconClass = 'fa-bridge';
+  baseColor = 'amber';
+} else if (motivo.includes('HUMANO')) {
+  iconClass = 'fa-people-group';
+  baseColor = 'orange';
+}
+
+      let layerId = 'SUTRAN_NORMAL';
+
+      if (estadoLimpio.includes('INTERRUMPIDO')) { colorTailwind = 'red'; counts.sutran.interrumpido++; layerId = 'SUTRAN_INTERRUMPIDO'; }
+      else if (estadoLimpio.includes('RESTRINGIDO')) { colorTailwind = 'amber'; counts.sutran.restringido++; layerId = 'SUTRAN_RESTRINGIDO'; }
+      else { counts.sutran.normal++; estadoLimpio = 'NORMAL'; }
+
+      // Coordenadas ahora vienen separadas
+      const lat = row.latitud != null ? parseFloat(row.latitud) : null;
+      const lng = row.longitud != null ? parseFloat(row.longitud) : null;
+      const tieneCoords = !isNaN(lat) && !isNaN(lng);
+
+      if (tieneCoords) {
+        const markerIconColor = isDarkMode ? 'text-gray-900' : 'text-white';
+        const idAcordeon = 'acord-sutran-' + idx;
+        const iconSutran = L.divIcon({
+  html: `<div class="w-5 h-5 rounded-full bg-${colorTailwind}-500 icon-marker marker-rumble flex items-center justify-center text-white dark:text-gray-900"><i class="fa-solid ${iconClass} text-[12px]"></i></div>`,
+  className: '', iconSize: [20, 20], iconAnchor: [10, 10]
+});
+        const marker = L.marker([lat, lng], { icon: iconSutran }).on('click', function() {
+          enfocarDesdeMapa(lat, lng, idAcordeon, colorTailwind, 'ALERTAS SUTRAN');
+        }).bindTooltip(
+          `<b class="font-sans text-[10px] uppercase text-${colorTailwind}-500">${row.ubicación || 'Vía'}</b><br><span class="text-[9px] dark:text-gray-300">${row.evento || ''}</span>`,
+          { className: 'custom-tooltip' }
+        );
+        allMarkers.push({ marker, layerId });
+      }
+
+      const idAcordeon = 'acord-sutran-' + idx;
+      const accionClic = tieneCoords ? `clickDesdeSidebar(${lat}, ${lng}, '${idAcordeon}', '${colorTailwind}')` : '';
+      const fechaStr = formatearFechaPeru(row.fechaHora_evento) || '-';
+      const ubicacionStr = row.ubicación || 'Sin ubicación';
+      const eventoStr = row.evento || row.motivo || 'SIN DETALLE';
+      const ubigeoStr = row.ubigeo || '-';
+      const fuenteStr = row.fuente || 'N/A';
+      const tipoAlertaStr = row.tipo_alerta || '';
+
+      // Badge de estado
+      let badgeEstado = '';
+      if (estadoLimpio === 'INTERRUMPIDO') {
+        badgeEstado = `<span class="bg-transparent border border-red-800/80 text-red-500 px-1.5 py-0.5 rounded text-[8px] font-console tracking-wider uppercase flex items-center gap-1 shadow-sm"><i class="fa-solid fa-circle-exclamation text-[8px] animate-pulse"></i>INTERRUMPIDO</span>`;
+      } else if (estadoLimpio === 'RESTRINGIDO') {
+        badgeEstado = `<span class="bg-transparent border border-amber-800/80 text-amber-500 px-1.5 py-0.5 rounded text-[8px] font-console tracking-wider uppercase flex items-center gap-1 shadow-sm"><i class="fa-solid fa-triangle-exclamation text-[8px]"></i>RESTRINGIDO</span>`;
+      } else {
+        badgeEstado = `<span class="bg-transparent border border-green-800/80 text-green-500 px-1.5 py-0.5 rounded text-[8px] font-console tracking-wider uppercase flex items-center gap-1 shadow-sm"><i class="fa-solid fa-check text-[8px]"></i>NORMAL</span>`;
+      }
+
+      // Datos para búsqueda y modal
+      const dataSearchStr = `${ubicacionStr} ${estadoLimpio} ${eventoStr} ${ubigeoStr} ${fuenteStr} ${tipoAlertaStr}`.toLowerCase();
+      const dataModal = encodeURIComponent(JSON.stringify({
+        lat, lng,
+        ubicacion: ubicacionStr,
+        estado: estadoLimpio,
+        fecha: fechaStr,
+        evento: eventoStr,
+        ubigeo: ubigeoStr,
+        fuente: fuenteStr,
+        tipo_alerta: tipoAlertaStr,
+        motivo: row.motivo || ''
+      }));
+
+      tarjetasHtml += `
+      <div id="${idAcordeon}" class="tarjeta-hud-sutran bg-[#121212] border border-gray-800 rounded-lg hover:border-${colorTailwind}-500/50 transition-colors shadow-sm relative flex flex-col overflow-hidden group cursor-pointer p-2 min-h-0"
+           data-search="${dataSearchStr}" onclick="${accionClic}">
+
+          <i class="fa-solid ${iconClass} text-${baseColor}-500/10 absolute -bottom-3 -left-4 text-[6rem] z-0 pointer-events-none"></i>
+
+          <div class="flex justify-between items-start w-full relative z-10 mb-0.5">
+              <h4 class="text-${colorTailwind}-400 font-bold text-[10px] uppercase leading-tight text-left flex-1 pr-2 mt-0.5">${ubicacionStr}</h4>
+              <div class="shrink-0 ml-2">
+                  ${badgeEstado}
+              </div>
+          </div>
+
+          <div class="flex flex-col items-end text-right w-full pl-6 relative z-10 space-y-0.5">
+              <p class="text-gray-500 text-[8px] font-console"><i class="fa-regular fa-clock"></i> ${fechaStr}</p>
+
+              <div class="w-full overflow-hidden text-[10px] text-gray-200 font-extrabold uppercase leading-tight smart-marquee-box relative">
+                  <div class="smart-marquee-text whitespace-nowrap inline-block">${eventoStr}</div>
+              </div>
+
+              <p class="text-gray-400 text-[8px] font-bold uppercase italic">${tipoAlertaStr} <span class="text-gray-600 font-console font-normal ml-1">(Ubigeo: ${ubigeoStr})</span></p>
+              <p class="text-gray-500 text-[8px] font-console uppercase">FUENTE: <span class="text-cyan-500 font-bold">${fuenteStr}</span></p>
+          </div>
+
+          <div class="flex justify-between items-end w-full relative z-20 mt-1 pt-1 border-t border-gray-800/50">
+              <button onclick="abrirModalSutran(event, '${dataModal}')" 
+                      class="w-6 h-6 flex items-center justify-center border border-gray-700 rounded bg-[#1a1a1a] hover:bg-[#2a2a2a] text-gray-400 hover:text-white transition-colors">
+                  <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>
+              </button>
+              <div class="flex items-center gap-1 text-[8px] text-sky-500/80 font-console">
+                  <i class="fa-solid fa-location-dot"></i> <span>${lat != null ? lat.toFixed(5) : '?'}, ${lng != null ? lng.toFixed(5) : '?'}</span>
+              </div>
+          </div>
+      </div>
+      `;
+    } catch(e) { console.error("Error procesando Sutran:", e); }
+  });
+
+  // Construir cabecera y lista
+  const gravesSutran = counts.sutran.interrumpido + counts.sutran.restringido;
+  const topFechaStr = formatearFechaPeru(topAlerta.fechaHora_evento) || '-';
+
+  const headerHtml = `
+  <div class="sticky top-0 bg-[#0a0a0a] z-[100] w-full pt-3 pb-2 border-b border-gray-800 shadow-[0_10px_20px_rgba(0,0,0,0.8)] px-0">
+      <div class="px-3">
+          <div class="bg-[#161a16] border border-cyan-900/30 rounded-lg p-3 mb-3 relative overflow-hidden flex shadow-lg">
+              <i class="fa-solid fa-road-barrier text-cyan-500/5 absolute -right-4 -bottom-4 text-7xl"></i>
+              <div class="w-1/3 flex flex-col justify-center border-r border-gray-700/50 pr-3">
+                  <h3 class="text-cyan-500 font-bold tracking-widest uppercase text-[10px] mb-1">SUTRAN</h3>
+                  <span class="text-cyan-500 font-bold text-5xl font-console leading-none" id="hud-contador-sutran">${gravesSutran}</span>
+                  <span class="text-gray-500 font-console text-[8px] uppercase mt-1">/ ${totalAlertas} TOTALES</span>
+              </div>
+              <div class="w-2/3 pl-3 text-right flex flex-col items-end justify-center relative z-10">
+                  <span class="border border-cyan-800/50 text-cyan-500 px-2 py-0.5 rounded text-[8px] font-console tracking-wider uppercase mb-1 flex items-center gap-1 shadow-sm">
+                      <span class="w-1.5 h-1.5 rounded-full bg-cyan-500 animate-pulse"></span> Último evento
+                  </span>
+                  <p class="pr-2 text-gray-400 text-[9px] font-console line-clamp-1 mb-1" id="hud-last-time-sutran"><i class="fa-regular fa-clock"></i> ${topFechaStr}</p>
+                  <h4 class="font-bold text-gray-200 text-[10px] leading-tight pr-2 uppercase line-clamp-2" id="hud-last-alert-sutran">
+                      <span class="text-gray-500 font-console">${topAlerta.ubicación || '-'}</span> <span class="mx-1 text-cyan-500/50">|</span> ${topAlerta.evento || ''}
+                  </h4>
+              </div>
+          </div>
+          <div class="relative">
+              <i class="fa-solid fa-crosshairs absolute left-3 top-2.5 text-gray-500 text-sm"></i>
+              <input type="text" id="buscador-sutran" onkeyup="filtrarRadarSutran(this.value)" 
+                     class="w-full bg-[#121212] border border-gray-700 text-gray-300 text-xs rounded-md focus:ring-cyan-500 focus:border-cyan-500 block pl-9 p-2 font-console placeholder-gray-600 outline-none transition-colors" 
+                     placeholder="Interceptar: Vía, Restricción, Ubigeo...">
+          </div>
+      </div>
+  </div>
+  <div id="lista-tarjetas-sutran" class="pl-3 pr-1 flex flex-col gap-2 p-3 pb-10 px-0 mt-2">
+      ${tarjetasHtml}
+  </div>
+  `;
+
+  htmlListaSutran = headerHtml;
+
+  // Actualizar HUD del mapa
+  if(document.getElementById('hud-sutran-count')) document.getElementById('hud-sutran-count').innerText = gravesSutran;
+  if(document.getElementById('hud-sutran-total')) document.getElementById('hud-sutran-total').innerText = "/ " + counts.sutran.total + " TOTALES";
+  if(document.getElementById('hud-contador-sutran')) document.getElementById('hud-contador-sutran').innerText = gravesSutran;
+
+  // Si el sidebar está abierto, refrescar lista
+  if(document.getElementById('lista-tarjetas-sutran')) {
+    document.getElementById('lista-tarjetas-sutran').innerHTML = tarjetasHtml;
+    setTimeout(() => {
+      if (typeof activarMarqueesInteligentes === 'function') activarMarqueesInteligentes();
+    }, 100);
+  }
+
+  if(document.getElementById('hud-last-alert-sutran')) document.getElementById('hud-last-alert-sutran').innerHTML = `<span class="text-gray-500 font-console">${topAlerta.ubicación || '-'}</span> <span class="mx-1 text-cyan-500/50">|</span> ${topAlerta.evento || ''}`;
+  if(document.getElementById('hud-last-time-sutran')) document.getElementById('hud-last-time-sutran').innerHTML = `<i class="fa-regular fa-clock"></i> ${topFechaStr}`;
+
+  // Filtro táctico
+  window.filtrarRadarSutran = function(termino) {
+    termino = termino.toLowerCase().trim();
+    const tarjetas = document.querySelectorAll('.tarjeta-hud-sutran');
+    let visibles = 0;
+    tarjetas.forEach(tarjeta => {
+      const dataSearch = tarjeta.getAttribute('data-search') || '';
+      if (dataSearch.includes(termino)) {
+        tarjeta.style.display = 'block';
+        visibles++;
+      } else {
+        tarjeta.style.display = 'none';
+      }
+    });
+    const contador = document.getElementById('hud-contador-sutran');
+    if (contador) {
+      contador.innerText = visibles;
+      contador.classList.toggle('text-gray-600', visibles === 0);
+      contador.classList.toggle('text-cyan-500', visibles > 0);
     }
+  };
+}
 
-    // ================== 3. PROCESAR IGP ==================
+let miniMapSutran = null;
+let miniMapMarkerSutran = null;
+
+window.abrirModalSutran = function(event, dataStringUrlEncoded) {
+  event.stopPropagation();
+  const data = JSON.parse(decodeURIComponent(dataStringUrlEncoded));
+
+  document.getElementById('modal-sutran-ubicacion').innerText = data.ubicacion;
+  document.getElementById('modal-sutran-estado').innerText = data.estado;
+  document.getElementById('modal-sutran-fecha').innerText = data.fecha;
+  document.getElementById('modal-sutran-tipo').innerText = data.tipo_alerta;
+  document.getElementById('modal-sutran-evento').innerText = data.evento;
+  document.getElementById('modal-sutran-ubigeo').innerText = data.ubigeo;
+  document.getElementById('modal-sutran-fuente').innerText = data.fuente;
+  document.getElementById('modal-sutran-motivo').innerText = data.motivo;
+  document.getElementById('modal-sutran-coords').innerText = `${data.lat}, ${data.lng}`;
+
+  const modal = document.getElementById('modal-captura-sutran');
+  modal.classList.remove('hidden');
+  setTimeout(() => {
+    modal.querySelector('.transform').classList.remove('scale-95');
+    modal.querySelector('.transform').classList.add('scale-100');
+  }, 10);
+
+  modal.onclick = function(e) {
+    if (e.target === modal) cerrarModalSutran();
+  };
+
+  setTimeout(() => {
+    const tileUrl = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+    if (!miniMapSutran) {
+      miniMapSutran = L.map('minimapa-sutran', { zoomControl: false, attributionControl: true }).setView([data.lat, data.lng], 16);
+      L.tileLayer(tileUrl, { attribution: '&copy; OpenStreetMap' }).addTo(miniMapSutran);
+    } else {
+      miniMapSutran.setView([data.lat, data.lng], 16);
+    }
+    miniMapSutran.invalidateSize();
+
+    if (miniMapMarkerSutran) miniMapSutran.removeLayer(miniMapMarkerSutran);
+    const customIcon = L.divIcon({
+      html: `<div class="w-8 h-8 rounded-full bg-cyan-500 flex items-center justify-center text-white border-2 border-white shadow-[0_0_15px_rgba(0,0,0,0.5)] animate-bounce"><i class="fa-solid fa-road-barrier text-sm"></i></div>`,
+      className: '',
+      iconSize: [32, 32],
+      iconAnchor: [16, 32]
+    });
+    miniMapMarkerSutran = L.marker([data.lat, data.lng], { icon: customIcon }).addTo(miniMapSutran);
+  }, 250);
+};
+
+window.cerrarModalSutran = function() {
+  const modal = document.getElementById('modal-captura-sutran');
+  modal.onclick = null;
+  modal.querySelector('.transform').classList.remove('scale-100');
+  modal.querySelector('.transform').classList.add('scale-95');
+  setTimeout(() => { modal.classList.add('hidden'); }, 200);
+};
+
+    //////////////////////////////////////////////////////////////////////////////////////////
+    // ================== 2. PROCESAR IGP ==============================================
+    //////////////////////////////////////////////////////////////////////////////////////////
+
     if(datos.igp && datos.igp.length > 0) {
       datos.igp.sort((a, b) => parseDateGlobal(b['Fecha y Hora']) - parseDateGlobal(a['Fecha y Hora']));
       let builderHtmlIgp = '<div class="space-y-2 font-sans">';
@@ -502,7 +677,10 @@ function procesarDatosCompletos(datos) {
       if (cardIgp) cardIgp.innerText = datos.igp.length;
     }
 
-    // ================== 4. PROCESAR BOMBEROS ==================
+    //////////////////////////////////////////////////////////////////////////////////////////
+    // ================== 3. PROCESAR BOMBEROS ==============================================
+    //////////////////////////////////////////////////////////////////////////////////////////
+
     if(datos.bomberos && datos.bomberos.length > 0) {
       // FIX TÁCTICO: Forzar orden cronológico (del más nuevo al más viejo)
       datos.bomberos.sort(function(a, b) {
@@ -610,7 +788,7 @@ function procesarDatosCompletos(datos) {
            if (!isNaN(lat) && !isNaN(lng)) {
               let layerId = isCerrado ? 'CGBVP_CERRADO' : 'CGBVP_' + typeKey;
               var iconBomb = L.divIcon({
-                 html: `<div class="w-5 h-5 rounded-full bg-${colorTailwind}-500 icon-marker marker-rumble flex items-center justify-center text-white"><i class="fa-solid ${iconClass} text-[12px]"></i></div>`,
+                 html: `<div class="w-5 h-5 rounded-full bg-${colorTailwind}-500 icon-marker marker-rumble flex items-center justify-center text-white dark:text-gray-900"><i class="fa-solid ${iconClass} text-[12px]"></i></div>`,
                  className: '', iconSize: [20, 20], iconAnchor: [10, 10]
               });
               let marker = L.marker([lat, lng], { icon: iconBomb }).on('click', function() {
@@ -701,8 +879,7 @@ function procesarDatosCompletos(datos) {
                       </span>
                       <p class="text-gray-400 text-[9px] font-console line-clamp-1 mb-1" id="hud-last-time-bomberos"><i class="fa-regular fa-clock"></i> ${topFechaStr}</p>
                       <h4 class="font-bold text-gray-200 text-[10px] leading-tight pr-2 uppercase line-clamp-2" id="hud-last-alert-bomberos">
-    <span class="text-gray-500 font-console">N° ${topAlerta['Nro Parte'] || '-'}</span> <span class="mx-1 text-red-500/50">|</span> ${topAlerta['Direccion'] || ''}
-</h4>
+     ${topAlerta['Direccion'] || ''}<span class="mx-1 text-red-500/50">|</span><span class="text-gray-500 font-console">N° ${topAlerta['Nro Parte'] || '-'}</span></h4>
                   </div>
               </div>
 
@@ -748,8 +925,7 @@ if(document.getElementById('lista-tarjetas-bomberos')) {
       if(document.getElementById('hud-last-time-bomberos')) document.getElementById('hud-last-time-bomberos').innerHTML = `<i class="fa-regular fa-clock"></i> ${topFechaStr}`;
 
     }
-// ==========================================================
-    /**
+ /**
  * SONDA DE FILTRADO TÁCTICO
  * Intercepta pulsaciones de teclado y filtra el radar de bomberos en tiempo real.
  */
@@ -784,14 +960,13 @@ if(document.getElementById('lista-tarjetas-bomberos')) {
     }
 };
 
-// Variable global para el minimapa
-// Variable global para el minimapa
 let miniMapBombero = null;
 let miniMapMarker = null;
 
 /**
  * ABRE EL MODAL DE CAPTURA
  */
+
 window.abrirModalBombero = function(event, dataStringUrlEncoded) {
     event.stopPropagation(); // BLOQUEA el click principal de la tarjeta
     const data = JSON.parse(decodeURIComponent(dataStringUrlEncoded));
@@ -864,9 +1039,10 @@ window.cerrarModalBombero = function() {
     setTimeout(() => { modal.classList.add('hidden'); }, 200);
 };
 
- // ==========================================================
-
-    // ================== 5. PROCESAR SEDES ==================
+    //////////////////////////////////////////////////////////////////////////////////////////
+    // ================== 5. PROCESAR SEDES ==============================================
+    //////////////////////////////////////////////////////////////////////////////////////////
+    
     if(datos.sedes && datos.sedes.length > 0) {
       datos.sedes.forEach(function(row) {
         try {
@@ -1139,30 +1315,30 @@ window.cerrarModalBombero = function() {
     };
 
     // HUD 1: SUTRAN
-    if(datos.sutran && datos.sutran.length > 0) {
-       let graves = counts.sutran.interrumpido + counts.sutran.restringido;
-       if(document.getElementById('hud-sutran-count')) document.getElementById('hud-sutran-count').innerText = graves;
-       if(document.getElementById('hud-sutran-total')) document.getElementById('hud-sutran-total').innerText = "/ " + counts.sutran.total + " TOTALES";
+if(datos.sutran && datos.sutran.length > 0) {
+   let graves = counts.sutran.interrumpido + counts.sutran.restringido;
+   if(document.getElementById('hud-sutran-count')) document.getElementById('hud-sutran-count').innerText = graves;
+   if(document.getElementById('hud-sutran-total')) document.getElementById('hud-sutran-total').innerText = "/ " + counts.sutran.total + " TOTALES";
+   
+   // Usamos la misma lógica del rediseño: la más reciente ya es datos.sutran[0]
+   let lastSutran = datos.sutran[0];
+   if(document.getElementById('hud-sutran-last') && lastSutran) {
+       let sEst = (lastSutran.estado || 'NORMAL').toUpperCase().replace('TRÁNSITO ', '').replace('TRANSITO ', '').trim();
+       let sCol = sEst.includes('INTERRUMPIDO') ? 'red' : (sEst.includes('RESTRINGIDO') ? 'amber' : 'green');
        
-       let lastSutran = datos.sutran.find(r => !r['Estado'].toLowerCase().includes('normal')) || datos.sutran[0];
-       if(document.getElementById('hud-sutran-last')) {
-           let sEst = (lastSutran['Estado'] || 'NORMAL').toUpperCase().replace('TRÁNSITO ', '').replace('TRANSITO ', '').trim();
-           let sCol = sEst.includes('INTERRUMPIDO') ? 'red' : (sEst.includes('RESTRINGIDO') ? 'amber' : 'green');
-           
-          // Inyectar Badge arriba a la derecha (Sombra adaptable al tema)
-          let bBadge =
-          `<span class="bg-${sCol}-500/10 text-${sCol}-500 border border-${sCol}-500/30 px-1.5 py-[1px] rounded text-[9px] font-console uppercase tracking-widest flex items-center gap-1.5 dark:shadow-[0_0_5px_rgba(0,0,0,0.5)]"><div class="w-1.5 h-1.5 rounded-full bg-${sCol}-500 animate-pulse shadow-[0_0_4px_currentColor]"></div> ${sEst}</span>`;
-           if(document.getElementById('hud-sutran-badge')) document.getElementById('hud-sutran-badge').innerHTML = bBadge;
+       // Badge de estado
+       let bBadge = `<span class="bg-${sCol}-500/10 text-${sCol}-500 border border-${sCol}-500/30 px-1.5 py-[1px] rounded text-[9px] font-console uppercase tracking-widest flex items-center gap-1.5 dark:shadow-[0_0_5px_rgba(0,0,0,0.5)]"><div class="w-1.5 h-1.5 rounded-full bg-${sCol}-500 animate-pulse shadow-[0_0_4px_currentColor]"></div> ${sEst}</span>`;
+       if(document.getElementById('hud-sutran-badge')) document.getElementById('hud-sutran-badge').innerHTML = bBadge;
 
-           // Inyectar Textos abajo alineados a la derecha
-           let dDate = `<span class="text-[9px] font-console text-gray-400 leading-none uppercase flex items-center justify-end gap-1 w-full"><i class="fa-regular fa-clock"></i> ${formatearFechaPeru(lastSutran['Fecha del evento'])}</span>`;
-           let locSutran = (lastSutran['Carretera'] || '') + ' - ' + (lastSutran['Afectación'] || '');
-           let row3 = `<span class="truncate block text-[11px] font-bold text-gray-800 dark:text-gray-200 leading-tight mt-1.5 mb-0.5 uppercase text-right w-full" title="${locSutran}">${locSutran}</span>`;
-           let row4 = genMarquee(lastSutran['Evento'] || '-', 'text-gray-500 font-bold text-right');
-           
-           document.getElementById('hud-sutran-last').innerHTML = dDate + row3 + row4;
-       }
-    }
+       // Fecha formateada
+       let dDate = `<span class="text-[9px] font-console text-gray-400 leading-none uppercase flex items-center justify-end gap-1 w-full"><i class="fa-regular fa-clock"></i> ${formatearFechaPeru(lastSutran.fechaHora_evento)}</span>`;
+       let locSutran = (lastSutran.ubicación || '') + ' - ' + (lastSutran.evento || '');
+       let row3 = `<span class="truncate block text-[11px] font-bold text-gray-800 dark:text-gray-200 leading-tight mt-1.5 mb-0.5 uppercase text-right w-full" title="${locSutran}">${locSutran}</span>`;
+       let row4 = genMarquee(lastSutran.evento || lastSutran.motivo || '-', 'text-gray-500 font-bold text-right');
+       
+       document.getElementById('hud-sutran-last').innerHTML = dDate + row3 + row4;
+   }
+}
 
     // HUD 2: BOMBEROS
     if(datos.bomberos && datos.bomberos.length > 0) {
@@ -2055,21 +2231,23 @@ function renderizarISSE() {
 
     let tSutran = 0, tIgp = 0, tMgp = 0, tCgbvp = 0;
 
-    // SUTRAN
-    if (typeof datosGlobales !== 'undefined' && datosGlobales.sutran) {
-        datosGlobales.sutran.forEach(r => {
-            let est = String(r['Estado']).toUpperCase();
-            if (est.includes('NORMAL')) return; 
-            let isRed = est.includes('INTERRUMPIDO');
-            let coords = String(r['Coordenada'] || '').split(',');
-            let ubicacion = clasificarUbicacion(r['Ubigeo'] + ' ' + r['Carretera'], coords[0], coords[1]);
-            
-            macrozonas[ubicacion.zona].sutran.c++;
-            macrozonas[ubicacion.zona].sutran.s = Math.max(macrozonas[ubicacion.zona].sutran.s, isRed ? 3 : 2);
-            dataSutran[ubicacion.zona].push({...r, colorClass: isRed ? 'red' : 'amber', regionExt: ubicacion.region});
-            tSutran++;
-        });
-    }
+    // SUTRAN (nuevos campos)
+if (typeof datosGlobales !== 'undefined' && datosGlobales.sutran) {
+    datosGlobales.sutran.forEach(r => {
+        let est = String(r.estado).toUpperCase();
+        if (est.includes('NORMAL')) return;
+        let isRed = est.includes('INTERRUMPIDO');
+        // Las coordenadas ahora vienen como latitud y longitud
+        let lat = r.latitud != null ? parseFloat(r.latitud) : null;
+        let lng = r.longitud != null ? parseFloat(r.longitud) : null;
+        let ubicacion = clasificarUbicacion(r.ubigeo + ' ' + r.ubicación, lat, lng);
+
+        macrozonas[ubicacion.zona].sutran.c++;
+        macrozonas[ubicacion.zona].sutran.s = Math.max(macrozonas[ubicacion.zona].sutran.s, isRed ? 3 : 2);
+        dataSutran[ubicacion.zona].push({...r, colorClass: isRed ? 'red' : 'amber', regionExt: ubicacion.region});
+        tSutran++;
+    });
+}
 
     // IGP
     let ultimoSismoObj = null;
@@ -2677,14 +2855,14 @@ function renderizarISSE() {
     // ==========================================
     
     const tplSutran = (i) => `
-        <div class="bg-white border border-slate-200 border-l-4 border-l-${i.colorClass}-500 px-3 py-2 rounded shadow-sm flex flex-col justify-between">
-            <div class="flex justify-between items-start mb-1.5">
-                <span class="text-[8.5px] font-bold uppercase text-${i.colorClass}-500 bg-${i.colorClass}-50 px-1.5 py-0.5 rounded">${i['Estado']}</span>
-                <span class="text-[8px] font-console text-slate-400">${formatearFechaPeru(i['Fecha del evento'])}</span>
-            </div>
-            <h4 class="text-[10.5px] font-bold text-slate-800 leading-tight mb-1 uppercase">${i['Carretera']} <span class="text-slate-500 font-bold">- ${i.regionExt}</span></h4>
-            <p class="text-[9.5px] text-slate-600 leading-tight line-clamp-2">${i['Afectación']}</p>
-        </div>`;
+    <div class="bg-white border border-slate-200 border-l-4 border-l-${i.colorClass}-500 px-3 py-2 rounded shadow-sm flex flex-col justify-between">
+        <div class="flex justify-between items-start mb-1.5">
+            <span class="text-[8.5px] font-bold uppercase text-${i.colorClass}-500 bg-${i.colorClass}-50 px-1.5 py-0.5 rounded">${i.estado || 'NORMAL'}</span>
+            <span class="text-[8px] font-console text-slate-400">${formatearFechaPeru(i.fechaHora_evento)}</span>
+        </div>
+        <h4 class="text-[10.5px] font-bold text-slate-800 leading-tight mb-1 uppercase">${i.ubicación} <span class="text-slate-500 font-bold">- ${i.regionExt}</span></h4>
+        <p class="text-[9.5px] text-slate-600 leading-tight line-clamp-2">${i.evento || i.motivo || ''}</p>
+    </div>`;
     html += paginarFuente("4. Estado de Carreteras (SUTRAN)", dataSutran, tplSutran);
 
     // =========================================================================
@@ -3414,7 +3592,7 @@ function forceMapRepaint() {
   localStorage.setItem('sam_cctv_data', JSON.stringify(dataCCTVGlobal));
 
   // 2. URL del nuevo visor en el servidor Express
-  const urlDestino = '/sam/matrix';  // ya no usamos GitHub Pages
+  const urlDestino = '/sam-engine/matrix';  // ya no usamos GitHub Pages
 
   console.log("SAM: Redirigiendo a Matrix en el servidor local...");
   console.log("URL Destino:", urlDestino);
@@ -3486,43 +3664,58 @@ async function refreshOSINT() {
 
 // Convierte cualquier fecha (string ISO, timestamp, Date) a formato peruano legible
 function formatearFechaPeru(raw) {
-    if (!raw) return '--/--/---- --:--:--';
+  if (!raw) return '--/--/---- --:--:--';
 
-    let date;
-    if (raw instanceof Date) {
-        date = raw;
-    } else if (typeof raw === 'number') {
-        date = new Date(raw > 1e12 ? raw : raw * 1000);
-    } else {
-        const str = String(raw).replace('T', ' ').replace('Z', '').replace(/\.\d{3}/, '');
-        date = new Date(str);
-        
-        if (isNaN(date.getTime())) {
-            // Intentar parsear dd/mm/aaaa hh:mm:ss (Se limpió el regex de escapes inútiles)
-            const parts = str.split(/[\s/:-]+/); 
-            if (parts.length >= 3) {
-                date = new Date(
-                    parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]),
-                    parseInt(parts[3]) || 0, parseInt(parts[4]) || 0, parseInt(parts[5]) || 0
-                );
-            }
-        }
+  let date;
+
+  // Si ya es Date, usarlo directamente
+  if (raw instanceof Date) {
+    date = raw;
+  }
+  // Si es número, asumir milisegundos UTC (o segundos si es bajo)
+  else if (typeof raw === 'number') {
+    const ms = raw > 1e12 ? raw : raw * 1000;
+    date = new Date(ms);
+  }
+  // Si es string
+  else {
+    let str = String(raw).trim();
+
+    // Si no tiene zona horaria explícita, añadir 'Z' para forzar UTC
+    if (!/[+\-Zz]/.test(str.slice(-6))) {
+      str += 'Z';
     }
 
-    if (isNaN(date.getTime())) return '--/--/---- --:--:--';
+    date = new Date(str);
 
-    // ⚡ SOLUCIÓN: Pasamos el objeto de configuración de forma anónima (inline)
-    // Esto fuerza a VS Code a validar los literales exactos y elimina el falso error
-    return date.toLocaleString('es-PE', {
-        timeZone: 'America/Lima',
-        year: 'numeric', 
-        month: '2-digit', 
-        day: '2-digit',
-        hour: '2-digit', 
-        minute: '2-digit', 
-        second: '2-digit',
-        hour12: false
-    });
+    // Fallback: si la fecha no es válida, intentar formato dd/mm/aaaa...
+    if (isNaN(date.getTime())) {
+      const parts = str.split(/[\s\/\-:]+/);
+      if (parts.length >= 3) {
+        date = new Date(
+          Date.UTC(
+            parseInt(parts[2]),       // año
+            parseInt(parts[1]) - 1,   // mes
+            parseInt(parts[0]),       // día
+            parseInt(parts[3] || 0),  // hora
+            parseInt(parts[4] || 0),  // minuto
+            parseInt(parts[5] || 0)   // segundo
+          )
+        );
+      }
+    }
+  }
+
+  if (isNaN(date.getTime())) return '--/--/---- --:--:--';
+
+  // Formatear en zona horaria Perú (UTC-5)
+  const opciones = {
+    timeZone: 'America/Lima',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+    hour12: false
+  };
+  return date.toLocaleString('es-PE', opciones);
 }
 
 /**

@@ -48,7 +48,7 @@
     .custom-scroll::-webkit-scrollbar-track { background: rgba(15,15,15,0.5); }
     .custom-scroll::-webkit-scrollbar-thumb { background: #0dffff; border-radius: 4px; }
   </style>
-  <script src="/sam/js/auth.js"></script>
+  <script src="/sam-engine/js/auth.js"></script>
 </head>
 <body class="h-screen w-full flex items-center justify-center overflow-hidden radar-bg relative">
   
@@ -101,7 +101,7 @@
             </div>`;
         }
         // Redirigir a matrix.html directamente (sin GAS)
-        window.location.href = '/sam/matrix';
+        window.location.href = '/sam-engine/matrix';
         return;
       }
 
@@ -117,7 +117,7 @@
               RESTAURANDO CONEXIÓN SEGURA...
             </div>`;
         }
-        setTimeout(() => { window.location.href = '/sam/panel'; }, 600);
+        setTimeout(() => { window.location.href = '/sam-engine/panel'; }, 600);
       } catch (err) {
         // No hay sesión o token inválido → mostrar login
         console.log("SAM: No hay sesión válida. Cargando Login.");
@@ -221,7 +221,7 @@
         const data = await AuthService.login(u, p);
         console.log("Datos recibidos del servidor:", data);
         // Login exitoso: redirigir al panel
-        window.location.href = '/sam/panel';
+        window.location.href = '/sam-engine/panel';
       } catch (error) {
         btn.disabled = false; btn.classList.remove('opacity-50');
         if(error.message.includes("Pendiente") || error.message.includes("restringido")) {

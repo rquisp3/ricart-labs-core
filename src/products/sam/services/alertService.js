@@ -10,20 +10,17 @@ const LiveCam = require('../models/LiveCams');
 // ------------------------------------------------------------------
 const formatearSutran = (docs) =>
   docs.map((r) => ({
-    'ID SUTRAN': r.idAlerta,
-    'Estado': r.restriccion || 'NORMAL',
-    'Fecha del evento': r.fechaInicio ? r.fechaInicio.toISOString() : '',
-    'Fecha de actualización': r.updatedAt ? r.updatedAt.toISOString() : '',
-    'Afectación': r.restriccion || '',
-    'Carretera': r.via || '',
-    'Ubigeo': '',
-    'Coordenada': r.location?.coordinates
-      ? `${r.location.coordinates[1]}, ${r.location.coordinates[0]}`
-      : '',
-    'Evento': r.tipoEvento || '',
-    'Fuente': '',
-    'Pasajeros Detenidos': '',
-    'Mercancías Detenidas': ''
+    idSutran: r.idAlerta,
+    tipo_alerta: r.tipoAlerta || '',
+    estado: r.estado || 'NORMAL',
+    evento: r.evento || '',
+    fechaHora_evento: r.fechaInicio ? r.fechaInicio.toISOString() : '',
+    ubigeo: r.ubigeo || '',
+    ubicación: r.ubicacion || '',
+    latitud: r.location?.coordinates ? r.location.coordinates[1] : null,
+    longitud: r.location?.coordinates ? r.location.coordinates[0] : null,
+    fuente: r.fuente || '',
+    motivo: r.motivo || ''
   }));
 
 const formatearIgp = (docs) =>
@@ -93,7 +90,7 @@ const formatearCecom = (docs) =>
 let cacheTodasLasAlertas = null;
 let ultimaVezActualizado = 0;
 // Tiempo de vida del escudo: 30 segundos en milisegundos
-const TIEMPO_VIDA_CACHE_MS = 30000; 
+const TIEMPO_VIDA_CACHE_MS = 60000; 
 
 // ------------------------------------------------------------------
 // Servicio principal (/todas)

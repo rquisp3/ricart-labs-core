@@ -14,20 +14,20 @@ app.use(cookieParser());
 const path = require('path');
 
 // Servir archivos estáticos de SAM
-app.use('/sam', express.static(path.join(__dirname, 'public', 'sam')));
+app.use('/sam-engine', express.static(path.join(__dirname, 'public', 'sam')));
 
 // Ruta para la página principal (index.html) del login
-app.get('/sam', (req, res) => {
+app.get('/sam-engine', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'sam', 'index.html'));
 });
 
 // Ruta para el panel (panel.html)
-app.get('/sam/panel', (req, res) => {
+app.get('/sam-engine/panel', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'sam', 'panel.html'));
 });
 
 // Ruta para el matrix (CCTV)
-app.get('/sam/matrix', (req, res) => {
+app.get('/sam-engine/matrix', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'sam', 'matrix.html'));
 });
 
