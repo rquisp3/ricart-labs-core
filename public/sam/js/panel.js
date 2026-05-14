@@ -364,13 +364,13 @@ let baseColor = 'cyan';             // color por defecto (para el ícono en la t
 const motivo = (row.motivo || '').toUpperCase();
 
 if (motivo.includes('CLIMATOLOGICO')) {
-  iconClass = 'fa-cloud-rain';
+  iconClass = 'fa-cloud-sun';
   baseColor = 'blue';
 } else if (motivo.includes('ACCIDENTE')) {
   iconClass = 'fa-car-burst';
   baseColor = 'red';
 } else if (motivo.includes('INFRAESTRUCTURA')) {
-  iconClass = 'fa-bridge';
+  iconClass = 'fa-road-barrier';
   baseColor = 'amber';
 } else if (motivo.includes('HUMANO')) {
   iconClass = 'fa-people-group';
@@ -407,7 +407,8 @@ if (motivo.includes('CLIMATOLOGICO')) {
       const idAcordeon = 'acord-sutran-' + idx;
       const accionClic = tieneCoords ? `clickDesdeSidebar(${lat}, ${lng}, '${idAcordeon}', '${colorTailwind}')` : '';
       const fechaStr = formatearFechaPeru(row.fechaHora_evento) || '-';
-      const ubicacionStr = row.ubicación || 'Sin ubicación';
+      const ubicacionStr = row.ubicación || 'SIN UBICACION';
+      const motivoStr = row.motivo || 'SIN MOTIVO';
       const eventoStr = row.evento || row.motivo || 'SIN DETALLE';
       const ubigeoStr = row.ubigeo || '-';
       const fuenteStr = row.fuente || 'N/A';
@@ -424,49 +425,50 @@ if (motivo.includes('CLIMATOLOGICO')) {
       }
 
       // Datos para búsqueda y modal
-      const dataSearchStr = `${ubicacionStr} ${estadoLimpio} ${eventoStr} ${ubigeoStr} ${fuenteStr} ${tipoAlertaStr}`.toLowerCase();
+      const dataSearchStr = `${ubicacionStr} ${ubicacionStr} ${estadoLimpio} ${eventoStr} ${ubigeoStr} ${fuenteStr} ${tipoAlertaStr}`.toLowerCase();
       const dataModal = encodeURIComponent(JSON.stringify({
         lat, lng,
         ubicacion: ubicacionStr,
         estado: estadoLimpio,
         fecha: fechaStr,
+        motivo: motivoStr || '',
         evento: eventoStr,
         ubigeo: ubigeoStr,
         fuente: fuenteStr,
-        tipo_alerta: tipoAlertaStr,
-        motivo: row.motivo || ''
+        tipo_alerta: tipoAlertaStr
       }));
 
+      // --- TARJETA ITEM SUTRAN (Adaptable Light/Dark) ---
       tarjetasHtml += `
-      <div id="${idAcordeon}" class="tarjeta-hud-sutran bg-[#121212] border border-gray-800 rounded-lg hover:border-${colorTailwind}-500/50 transition-colors shadow-sm relative flex flex-col overflow-hidden group cursor-pointer p-2 min-h-0"
+      <div id="${idAcordeon}" class="tarjeta-hud-sutran bg-white dark:bg-[#121212] border border-gray-200 dark:border-gray-800 rounded-lg hover:border-${colorTailwind}-400 dark:hover:border-${colorTailwind}-500/50 transition-colors shadow-sm relative flex flex-col overflow-hidden group cursor-pointer p-2 min-h-0"
            data-search="${dataSearchStr}" onclick="${accionClic}">
 
           <i class="fa-solid ${iconClass} text-${baseColor}-500/10 absolute -bottom-3 -left-4 text-[6rem] z-0 pointer-events-none"></i>
 
           <div class="flex justify-between items-start w-full relative z-10 mb-0.5">
-              <h4 class="text-${colorTailwind}-400 font-bold text-[10px] uppercase leading-tight text-left flex-1 pr-2 mt-0.5">${ubicacionStr}</h4>
+              <h4 class="text-${colorTailwind}-600 dark:text-${colorTailwind}-400 font-bold text-[10px] uppercase leading-tight text-left flex-1 pr-2 mt-0.5">${motivoStr}</h4>
               <div class="shrink-0 ml-2">
                   ${badgeEstado}
               </div>
           </div>
 
           <div class="flex flex-col items-end text-right w-full pl-6 relative z-10 space-y-0.5">
-              <p class="text-gray-500 text-[8px] font-console"><i class="fa-regular fa-clock"></i> ${fechaStr}</p>
+              <p class="text-gray-500 dark:text-gray-500 text-[8px] font-console"><i class="fa-regular fa-clock"></i> ${fechaStr}</p>
 
-              <div class="w-full overflow-hidden text-[10px] text-gray-200 font-extrabold uppercase leading-tight smart-marquee-box relative">
-                  <div class="smart-marquee-text whitespace-nowrap inline-block">${eventoStr}</div>
+              <div class="w-full overflow-hidden text-[10px] text-gray-800 dark:text-gray-200 font-extrabold uppercase leading-tight smart-marquee-box relative">
+                  <div class="smart-marquee-text whitespace-nowrap inline-block">${ubicacionStr}</div>
               </div>
-
-              <p class="text-gray-400 text-[8px] font-bold uppercase italic">${tipoAlertaStr} <span class="text-gray-600 font-console font-normal ml-1">(Ubigeo: ${ubigeoStr})</span></p>
-              <p class="text-gray-500 text-[8px] font-console uppercase">FUENTE: <span class="text-cyan-500 font-bold">${fuenteStr}</span></p>
+              <p class="text-gray-600 dark:text-gray-300 text-[8px] font-bold uppercase">${ubigeoStr}</p>
+              <p class="text-gray-500 dark:text-gray-400 text-[8px] font-bold uppercase">${eventoStr}</p>
+              <p class="text-gray-500 dark:text-gray-500 text-[8px] font-console uppercase">FUENTE: <span class="text-cyan-600 dark:text-cyan-500 font-bold">${fuenteStr}</span></p>
           </div>
 
-          <div class="flex justify-between items-end w-full relative z-20 mt-1 pt-1 border-t border-gray-800/50">
+          <div class="flex justify-between items-end w-full relative z-20 mt-1 pt-1 border-t border-gray-200 dark:border-gray-800/50">
               <button onclick="abrirModalSutran(event, '${dataModal}')" 
-                      class="w-6 h-6 flex items-center justify-center border border-gray-700 rounded bg-[#1a1a1a] hover:bg-[#2a2a2a] text-gray-400 hover:text-white transition-colors">
+                      class="w-6 h-6 flex items-center justify-center border border-gray-300 dark:border-gray-700 rounded bg-gray-50 dark:bg-[#1a1a1a] hover:bg-gray-200 dark:hover:bg-[#2a2a2a] text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
                   <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>
               </button>
-              <div class="flex items-center gap-1 text-[8px] text-sky-500/80 font-console">
+              <div class="flex items-center gap-1 text-[8px] text-sky-600 dark:text-sky-500/80 font-console">
                   <i class="fa-solid fa-location-dot"></i> <span>${lat != null ? lat.toFixed(5) : '?'}, ${lng != null ? lng.toFixed(5) : '?'}</span>
               </div>
           </div>
@@ -479,30 +481,32 @@ if (motivo.includes('CLIMATOLOGICO')) {
   const gravesSutran = counts.sutran.interrumpido + counts.sutran.restringido;
   const topFechaStr = formatearFechaPeru(topAlerta.fechaHora_evento) || '-';
 
+  // --- CABECERA HUD SUTRAN (Adaptable Light/Dark) ---
   const headerHtml = `
-  <div class="sticky top-0 bg-[#0a0a0a] z-[100] w-full pt-3 pb-2 border-b border-gray-800 shadow-[0_10px_20px_rgba(0,0,0,0.8)] px-0">
+  <div class="sticky top-0 bg-white dark:bg-[#0a0a0a] z-[100] w-full pt-3 pb-2 border-b border-gray-200 dark:border-gray-800 shadow-[0_5px_15px_rgba(0,0,0,0.05)] dark:shadow-[0_10px_20px_rgba(0,0,0,0.8)] px-0 transition-colors">
       <div class="px-3">
-          <div class="bg-[#161a16] border border-cyan-900/30 rounded-lg p-3 mb-3 relative overflow-hidden flex shadow-lg">
-              <i class="fa-solid fa-road-barrier text-cyan-500/5 absolute -right-4 -bottom-4 text-7xl"></i>
-              <div class="w-1/3 flex flex-col justify-center border-r border-gray-700/50 pr-3">
-                  <h3 class="text-cyan-500 font-bold tracking-widest uppercase text-[10px] mb-1">SUTRAN</h3>
-                  <span class="text-cyan-500 font-bold text-5xl font-console leading-none" id="hud-contador-sutran">${gravesSutran}</span>
-                  <span class="text-gray-500 font-console text-[8px] uppercase mt-1">/ ${totalAlertas} TOTALES</span>
+          <div class="bg-cyan-50 dark:bg-[#161a16] border border-cyan-200 dark:border-cyan-900/30 rounded-lg p-3 mb-3 relative overflow-hidden flex shadow-sm dark:shadow-lg transition-colors">
+              <i class="fa-solid fa-road-barrier text-cyan-500/10 dark:text-cyan-500/5 absolute -right-4 -bottom-4 text-7xl"></i>
+              <div class="w-1/3 flex flex-col justify-center border-r border-cyan-200 dark:border-gray-700/50 pr-3">
+                  <h3 class="text-cyan-600 dark:text-cyan-500 font-bold tracking-widest uppercase text-[10px] mb-1">SUTRAN</h3>
+                  <span class="text-cyan-600 dark:text-cyan-500 font-bold text-5xl font-console leading-none" id="hud-contador-sutran">${gravesSutran}</span>
+                  <span class="text-gray-500 dark:text-gray-500 font-console text-[8px] uppercase mt-1">/ ${totalAlertas} TOTALES</span>
               </div>
               <div class="w-2/3 pl-3 text-right flex flex-col items-end justify-center relative z-10">
-                  <span class="border border-cyan-800/50 text-cyan-500 px-2 py-0.5 rounded text-[8px] font-console tracking-wider uppercase mb-1 flex items-center gap-1 shadow-sm">
-                      <span class="w-1.5 h-1.5 rounded-full bg-cyan-500 animate-pulse"></span> Último evento
+                  <span class="border border-cyan-300 dark:border-cyan-800/50 text-cyan-600 dark:text-cyan-500 px-2 py-0.5 rounded text-[8px] font-console tracking-wider uppercase mb-1 flex items-center gap-1 shadow-sm bg-white/50 dark:bg-transparent">
+                      <span class="w-1.5 h-1.5 rounded-full bg-cyan-500 animate-pulse"></span> ÚLTIMO EVENTO
                   </span>
-                  <p class="pr-2 text-gray-400 text-[9px] font-console line-clamp-1 mb-1" id="hud-last-time-sutran"><i class="fa-regular fa-clock"></i> ${topFechaStr}</p>
-                  <h4 class="font-bold text-gray-200 text-[10px] leading-tight pr-2 uppercase line-clamp-2" id="hud-last-alert-sutran">
-                      <span class="text-gray-500 font-console">${topAlerta.ubicación || '-'}</span> <span class="mx-1 text-cyan-500/50">|</span> ${topAlerta.evento || ''}
+                  <p class="pr-2 text-gray-500 dark:text-gray-400 text-[9px] font-console line-clamp-1 mb-1" id="hud-last-time-sutran"><i class="fa-regular fa-clock"></i> ${topFechaStr}</p>
+                  <h4 class="font-bold text-gray-800 dark:text-gray-200 text-[10px] leading-tight pr-2 uppercase line-clamp-2" id="hud-last-alert-sutran">
+                      ${topAlerta.ubicación || '-'}<br>
+                      <span class="text-gray-500 font-console">${topAlerta.evento || '-'}</span>
                   </h4>
               </div>
           </div>
           <div class="relative">
-              <i class="fa-solid fa-crosshairs absolute left-3 top-2.5 text-gray-500 text-sm"></i>
+              <i class="fa-solid fa-crosshairs absolute left-3 top-2.5 text-gray-400 dark:text-gray-500 text-sm"></i>
               <input type="text" id="buscador-sutran" onkeyup="filtrarRadarSutran(this.value)" 
-                     class="w-full bg-[#121212] border border-gray-700 text-gray-300 text-xs rounded-md focus:ring-cyan-500 focus:border-cyan-500 block pl-9 p-2 font-console placeholder-gray-600 outline-none transition-colors" 
+                     class="w-full bg-gray-50 dark:bg-[#121212] border border-gray-300 dark:border-gray-700 text-gray-800 dark:text-gray-300 text-xs rounded-md focus:ring-cyan-500 focus:border-cyan-500 block pl-9 p-2 font-console placeholder-gray-400 dark:placeholder-gray-600 outline-none transition-colors" 
                      placeholder="Interceptar: Vía, Restricción, Ubigeo...">
           </div>
       </div>
@@ -555,59 +559,126 @@ if (motivo.includes('CLIMATOLOGICO')) {
 
 let miniMapSutran = null;
 let miniMapMarkerSutran = null;
+let miniMapLayerSutran = null; // ⚡ NUEVA VARIABLE
 
 window.abrirModalSutran = function(event, dataStringUrlEncoded) {
   event.stopPropagation();
-  const data = JSON.parse(decodeURIComponent(dataStringUrlEncoded));
+  
+  try {
+      const data = JSON.parse(decodeURIComponent(dataStringUrlEncoded));
 
-  document.getElementById('modal-sutran-ubicacion').innerText = data.ubicacion;
-  document.getElementById('modal-sutran-estado').innerText = data.estado;
-  document.getElementById('modal-sutran-fecha').innerText = data.fecha;
-  document.getElementById('modal-sutran-tipo').innerText = data.tipo_alerta;
-  document.getElementById('modal-sutran-evento').innerText = data.evento;
-  document.getElementById('modal-sutran-ubigeo').innerText = data.ubigeo;
-  document.getElementById('modal-sutran-fuente').innerText = data.fuente;
-  document.getElementById('modal-sutran-motivo').innerText = data.motivo;
-  document.getElementById('modal-sutran-coords').innerText = `${data.lat}, ${data.lng}`;
+      // =========================================================
+      // ⚡ LÓGICA DINÁMICA DE ICONOS Y COLORES (SUTRAN)
+      // =========================================================
+      const motivo = (data.motivo || '').toUpperCase();
+      let iconClass = 'fa-road-barrier'; // Default
+      let baseColor = 'cyan'; // Default
 
-  const modal = document.getElementById('modal-captura-sutran');
-  modal.classList.remove('hidden');
-  setTimeout(() => {
-    modal.querySelector('.transform').classList.remove('scale-95');
-    modal.querySelector('.transform').classList.add('scale-100');
-  }, 10);
+      if (motivo.includes('CLIMATOLOGICO') || motivo.includes('CLIMATOLÓGICO')) {
+          iconClass = 'fa-cloud-sun';
+          baseColor = 'blue';
+      } else if (motivo.includes('ACCIDENTE')) {
+          iconClass = 'fa-car-burst';
+          baseColor = 'red';
+      } else if (motivo.includes('INFRAESTRUCTURA')) {
+          iconClass = 'fa-road-barrier';
+          baseColor = 'amber';
+      } else if (motivo.includes('HUMANO')) {
+          iconClass = 'fa-people-group';
+          baseColor = 'orange';
+      }
 
-  modal.onclick = function(e) {
-    if (e.target === modal) cerrarModalSutran();
-  };
+      // 1. Cambiamos el icono de la cabecera del popup
+      const headerIcon = document.getElementById('modal-sutran-icon');
+      if (headerIcon) {
+          headerIcon.className = `fa-solid ${iconClass} text-${baseColor}-500`;
+      }
 
-  setTimeout(() => {
-    const tileUrl = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
-    if (!miniMapSutran) {
-      miniMapSutran = L.map('minimapa-sutran', { zoomControl: false, attributionControl: true }).setView([data.lat, data.lng], 16);
-      L.tileLayer(tileUrl, { attribution: '&copy; OpenStreetMap' }).addTo(miniMapSutran);
-    } else {
-      miniMapSutran.setView([data.lat, data.lng], 16);
-    }
-    miniMapSutran.invalidateSize();
+      // 2. Inyectamos los datos de texto
+      document.getElementById('modal-sutran-ubicacion').innerText = data.ubicacion || '-';
+      document.getElementById('modal-sutran-estado').innerText = data.estado || '-';
+      document.getElementById('modal-sutran-fecha').innerText = data.fecha || '-';
+      document.getElementById('modal-sutran-tipo').innerText = data.tipo_alerta || '-';
+      document.getElementById('modal-sutran-evento').innerText = data.evento || 'SIN DETALLE ADICIONAL';
+      document.getElementById('modal-sutran-ubigeo').innerText = data.ubigeo || '-';
+      document.getElementById('modal-sutran-fuente').innerText = data.fuente || '-';
+      document.getElementById('modal-sutran-motivo').innerText = data.motivo || '-';
+      document.getElementById('modal-sutran-coords').innerText = `${data.lat || 0}, ${data.lng || 0}`;
 
-    if (miniMapMarkerSutran) miniMapSutran.removeLayer(miniMapMarkerSutran);
-    const customIcon = L.divIcon({
-      html: `<div class="w-8 h-8 rounded-full bg-cyan-500 flex items-center justify-center text-white border-2 border-white shadow-[0_0_15px_rgba(0,0,0,0.5)] animate-bounce"><i class="fa-solid fa-road-barrier text-sm"></i></div>`,
-      className: '',
-      iconSize: [32, 32],
-      iconAnchor: [16, 32]
-    });
-    miniMapMarkerSutran = L.marker([data.lat, data.lng], { icon: customIcon }).addTo(miniMapSutran);
-  }, 250);
+      // 3. Apertura Táctica
+      const modal = document.getElementById('modal-captura-sutran');
+      modal.classList.remove('hidden');
+      
+      setTimeout(() => {
+        const transformEl = modal.querySelector('.transform');
+        if (transformEl) {
+            transformEl.classList.remove('scale-95');
+            transformEl.classList.add('scale-100');
+        }
+      }, 10);
+
+      modal.onclick = function(e) {
+        if (e.target === modal) cerrarModalSutran();
+      };
+
+      // 4. Renderizado del minimapa a prueba de fallos
+      setTimeout(() => {
+        const isDark = document.documentElement.classList.contains('dark');
+        const tileUrl = isDark 
+            ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' 
+            : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+        
+        // A) Si el mapa no existe, lo creamos
+        if (!miniMapSutran) {
+          miniMapSutran = L.map('minimapa-sutran', { zoomControl: false, attributionControl: false });
+        }
+        
+        // B) Centramos la cámara
+        miniMapSutran.setView([data.lat, data.lng], 16);
+
+        // C) Si la CAPA no existe, la creamos. Si ya existe, solo le cambiamos la URL.
+        if (!miniMapLayerSutran) {
+          miniMapLayerSutran = L.tileLayer(tileUrl, { attribution: '&copy; OpenStreetMap' }).addTo(miniMapSutran);
+        } else {
+          miniMapLayerSutran.setUrl(tileUrl);
+        }
+        
+        miniMapSutran.invalidateSize();
+
+        // D) Renderizamos el marcador
+        if (miniMapMarkerSutran) miniMapSutran.removeLayer(miniMapMarkerSutran);
+        
+        const customIcon = L.divIcon({
+          html: `<div class="w-8 h-8 rounded-full bg-${baseColor}-500 flex items-center justify-center text-white dark:text-gray-900 border-2 border-white dark:border-[#121212] shadow-[0_0_15px_rgba(0,0,0,0.5)] dark:shadow-[0_0_15px_rgba(255,255,255,0.1)] animate-bounce"><i class="fa-solid ${iconClass} text-sm"></i></div>`,
+          className: '',
+          iconSize: [32, 32],
+          iconAnchor: [16, 32] 
+        });
+        
+        miniMapMarkerSutran = L.marker([data.lat, data.lng], { icon: customIcon }).addTo(miniMapSutran);
+      }, 250);
+
+  } catch (error) {
+      console.error("SAM: Error al parsear datos de SUTRAN para el modal", error);
+  }
 };
 
 window.cerrarModalSutran = function() {
   const modal = document.getElementById('modal-captura-sutran');
+  if (!modal) return;
+  
   modal.onclick = null;
-  modal.querySelector('.transform').classList.remove('scale-100');
-  modal.querySelector('.transform').classList.add('scale-95');
-  setTimeout(() => { modal.classList.add('hidden'); }, 200);
+  const transformEl = modal.querySelector('.transform');
+  
+  // Retirada suave
+  if (transformEl) {
+      transformEl.classList.remove('scale-100');
+      transformEl.classList.add('scale-95');
+  }
+  
+  setTimeout(() => { 
+      modal.classList.add('hidden'); 
+  }, 200); // 200ms coincide con la duración de la animación en Tailwind
 };
 
     //////////////////////////////////////////////////////////////////////////////////////////
@@ -812,37 +883,37 @@ window.cerrarModalSutran = function() {
                dir: direccionStr, evento: eventoEmergencia, maq: maquinasStr, fecha: fechaStr, icon: iconClass, color: colorTailwind
            }));
 
-           // --- TARJETA ITEM: TÍTULO IZQ, DATOS DER ---
+           // --- TARJETA ITEM BOMBEROS (Adaptable Light/Dark) ---
            tarjetasHtml += `
-           <div id="${idAcord}" class="tarjeta-hud-bombero bg-[#121212] border border-gray-800 rounded-lg hover:border-${colorTailwind}-500/50 transition-colors shadow-sm relative flex flex-col overflow-hidden group cursor-pointer p-2 min-h-0"
+           <div id="${idAcord}" class="tarjeta-hud-bombero bg-white dark:bg-[#121212] border border-gray-200 dark:border-gray-800 rounded-lg hover:border-${colorTailwind}-400 dark:hover:border-${colorTailwind}-500/50 transition-colors shadow-sm relative flex flex-col overflow-hidden group cursor-pointer p-2 min-h-0"
                 data-search="${dataSearchStr}" onclick="${accionClic}">
                 
                <i class="fa-solid ${iconClass} text-${colorTailwind}-500/10 absolute -bottom-3 -left-4 text-[6rem] z-0 pointer-events-none"></i>
                
                <div class="flex justify-between items-start w-full relative z-10 mb-0.5">
-                   <h4 class="text-${colorTailwind}-400 font-bold text-[10px] uppercase leading-tight text-left flex-1 pr-2 mt-0.5">${tituloEmergencia}</h4>
+                   <h4 class="text-${colorTailwind}-600 dark:text-${colorTailwind}-400 font-bold text-[10px] uppercase leading-tight text-left flex-1 pr-2 mt-0.5">${tituloEmergencia}</h4>
                    <div class="shrink-0 ml-2">
                        ${badgeEstado}
                    </div>
                </div>
 
                <div class="flex flex-col items-end text-right w-full pl-6 relative z-10 space-y-0.5">
-                   <p class="text-gray-500 text-[8px] font-console"><i class="fa-regular fa-clock"></i> ${fechaStr}</p>
+                   <p class="text-gray-500 dark:text-gray-400 text-[8px] font-console"><i class="fa-regular fa-clock"></i> ${fechaStr}</p>
                    
-                   <div class="w-full overflow-hidden text-[10px] text-gray-200 font-extrabold uppercase leading-tight smart-marquee-box relative">
-    <div class="smart-marquee-text whitespace-nowrap inline-block">${direccionStr}</div>
-</div>
+                   <div class="w-full overflow-hidden text-[10px] text-gray-800 dark:text-gray-200 font-extrabold uppercase leading-tight smart-marquee-box relative">
+                       <div class="smart-marquee-text whitespace-nowrap inline-block">${direccionStr}</div>
+                   </div>
                    
-                   <p class="text-gray-400 text-[8px] font-bold uppercase italic">${eventoEmergencia} <span class="text-gray-600 font-console font-normal ml-1">(N° ${nroParteStr})</span></p>
-                   <p class="text-gray-500 text-[8px] font-console uppercase">MÁQUINAS: <span class="text-amber-500 font-bold">${maquinasStr}</span></p>
+                   <p class="text-gray-600 dark:text-gray-300 text-[8px] font-bold uppercase italic">${eventoEmergencia}</p>
+                   <p class="text-gray-500 dark:text-gray-400 text-[8px] font-console uppercase">MÁQUINAS: <span class="text-amber-600 dark:text-amber-500 font-bold">${maquinasStr}</span></p>
                </div>
 
-               <div class="flex justify-between items-end w-full relative z-20 mt-1 pt-1 border-t border-gray-800/50">
+               <div class="flex justify-between items-end w-full relative z-20 mt-1 pt-1 border-t border-gray-200 dark:border-gray-800/50">
                    <button onclick="abrirModalBombero(event, '${dataModal}')" 
-                           class="w-6 h-6 flex items-center justify-center border border-gray-700 rounded bg-[#1a1a1a] hover:bg-[#2a2a2a] text-gray-400 hover:text-white transition-colors">
+                           class="w-6 h-6 flex items-center justify-center border border-gray-300 dark:border-gray-700 rounded bg-gray-50 dark:bg-[#1a1a1a] hover:bg-gray-200 dark:hover:bg-[#2a2a2a] text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
                        <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>
                    </button>
-                   <div class="flex items-center gap-1 text-[8px] text-sky-500/80 font-console">
+                   <div class="flex items-center gap-1 text-[8px] text-sky-600 dark:text-sky-500/80 font-console">
                        <i class="fa-solid fa-location-dot"></i> <span>${lat}, ${lng}</span>
                    </div>
                </div>
@@ -860,33 +931,34 @@ window.cerrarModalSutran = function() {
       let topTitulo = topTipoRaw.split('/')[0].trim() || 'EMERGENCIA';
       let topFechaStr = formatearFechaPeru(topAlerta['Fecha y Hora']) || '-';
 
+      // --- CABECERA HUD BOMBEROS (Adaptable Light/Dark) ---
       let headerHtml = `
-      <div class="sticky top-0 bg-[#0a0a0a] z-[100] w-full pt-3 pb-2 border-b border-gray-800 shadow-[0_10px_20px_rgba(0,0,0,0.8)] px-0">
+      <div class="sticky top-0 bg-white dark:bg-[#0a0a0a] z-[100] w-full pt-3 pb-2 border-b border-gray-200 dark:border-gray-800 shadow-[0_5px_15px_rgba(0,0,0,0.05)] dark:shadow-[0_10px_20px_rgba(0,0,0,0.8)] px-0 transition-colors">
           <div class="px-3">
 
-              <div class="bg-[#1a1616] border border-red-900/30 rounded-lg p-3 mb-3 relative overflow-hidden flex shadow-lg">
-                  <i class="fa-solid fa-fire text-red-500/5 absolute -right-4 -bottom-4 text-7xl"></i>
+              <div class="bg-red-50 dark:bg-[#1a1616] border border-red-200 dark:border-red-900/30 rounded-lg p-3 mb-3 relative overflow-hidden flex shadow-sm dark:shadow-lg transition-colors">
+                  <i class="fa-solid fa-fire text-red-500/10 dark:text-red-500/5 absolute -right-4 -bottom-4 text-7xl"></i>
                   
-                  <div class="w-1/3 flex flex-col justify-center border-r border-gray-700/50 pr-3">
-                      <h3 class="text-red-500 font-bold tracking-widest uppercase text-[10px] mb-1">BOMBEROS 24H</h3>
-                      <span class="text-red-500 font-bold text-5xl font-console leading-none" id="hud-contador-bomberos">${gravesCGBVP}</span>
-                      <span class="text-gray-500 font-console text-[8px] uppercase mt-1">/ ${totalAlertas} EN TOTAL</span>
+                  <div class="w-1/3 flex flex-col justify-center border-r border-red-200 dark:border-gray-700/50 pr-3">
+                      <h3 class="text-red-600 dark:text-red-500 font-bold tracking-widest uppercase text-[10px] mb-1">BOMBEROS 24H</h3>
+                      <span class="text-red-600 dark:text-red-500 font-bold text-5xl font-console leading-none" id="hud-contador-bomberos">${gravesCGBVP}</span>
+                      <span class="text-gray-500 dark:text-gray-500 font-console text-[8px] uppercase mt-1">/ ${totalAlertas} EN TOTAL</span>
                   </div>
                   
                   <div class="w-2/3 pl-3 text-right flex flex-col items-end justify-center relative z-10">
-                      <span class="border border-red-800/50 text-red-500 px-2 py-0.5 rounded text-[8px] font-console tracking-wider uppercase mb-1 flex items-center gap-1 shadow-sm">
-                          <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span> ${topTitulo}
+                      <span class="border border-red-300 dark:border-red-800/50 text-red-600 dark:text-red-500 px-2 py-0.5 rounded text-[8px] font-console tracking-wider uppercase mb-1 flex items-center gap-1 shadow-sm bg-white/50 dark:bg-transparent">
+                          <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span> ÚLTIMO EVENTO
                       </span>
-                      <p class="text-gray-400 text-[9px] font-console line-clamp-1 mb-1" id="hud-last-time-bomberos"><i class="fa-regular fa-clock"></i> ${topFechaStr}</p>
-                      <h4 class="font-bold text-gray-200 text-[10px] leading-tight pr-2 uppercase line-clamp-2" id="hud-last-alert-bomberos">
-     ${topAlerta['Direccion'] || ''}<span class="mx-1 text-red-500/50">|</span><span class="text-gray-500 font-console">N° ${topAlerta['Nro Parte'] || '-'}</span></h4>
+                      <p class="text-gray-500 dark:text-gray-400 text-[9px] font-console line-clamp-1 mb-1" id="hud-last-time-bomberos"><i class="fa-regular fa-clock"></i> ${topFechaStr}</p>
+                      <h4 class="font-bold text-gray-800 dark:text-gray-200 text-[10px] leading-tight pr-2 uppercase line-clamp-2" id="hud-last-alert-bomberos">
+     ${topAlerta['Direccion'] || ''}<br><span class="text-gray-500 font-console">${topTitulo}</span></h4>
                   </div>
               </div>
 
               <div class="relative">
-                  <i class="fa-solid fa-crosshairs absolute left-3 top-2.5 text-gray-500 text-sm"></i>
+                  <i class="fa-solid fa-crosshairs absolute left-3 top-2.5 text-gray-400 dark:text-gray-500 text-sm"></i>
                   <input type="text" id="buscador-bomberos" onkeyup="filtrarRadarBomberos(this.value)" 
-                         class="w-full bg-[#121212] border border-gray-700 text-gray-300 text-xs rounded-md focus:ring-red-500 focus:border-red-500 block pl-9 p-2 font-console placeholder-gray-600 outline-none transition-colors" 
+                         class="w-full bg-gray-50 dark:bg-[#121212] border border-gray-300 dark:border-gray-700 text-gray-800 dark:text-gray-300 text-xs rounded-md focus:ring-red-500 focus:border-red-500 block pl-9 p-2 font-console placeholder-gray-400 dark:placeholder-gray-600 outline-none transition-colors" 
                          placeholder="Interceptar: Tipo, Parte, Ubicación...">
               </div>
           </div>
@@ -961,7 +1033,8 @@ if(document.getElementById('lista-tarjetas-bomberos')) {
 };
 
 let miniMapBombero = null;
-let miniMapMarker = null;
+let miniMapMarkerBombero = null;
+let miniMapLayerBombero = null; // ⚡ NUEVA VARIABLE
 
 /**
  * ABRE EL MODAL DE CAPTURA
@@ -997,35 +1070,40 @@ window.abrirModalBombero = function(event, dataStringUrlEncoded) {
     };
 
     setTimeout(() => {
-        const tileUrl = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
-
-        if (!miniMapBombero) {
-            miniMapBombero = L.map('minimapa-bombero', { zoomControl: false, attributionControl: true }).setView([data.lat, data.lng], 16);
-            L.tileLayer(tileUrl, { attribution: '&copy; OpenStreetMap' }).addTo(miniMapBombero);
+        const isDark = document.documentElement.classList.contains('dark');
+        const tileUrl = isDark 
+            ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' 
+            : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
             
-            const attContainer = document.querySelector('.leaflet-control-attribution');
-            if (attContainer) attContainer.classList.add('leaflet-custom-theme', 'font-console');
-        } else {
-            miniMapBombero.setView([data.lat, data.lng], 16);
+        // A) Crear mapa si no existe
+        if (!miniMapBombero) {
+            miniMapBombero = L.map('minimapa-bombero', { zoomControl: false, attributionControl: false });
         }
+        
+        // B) Centrar cámara
+        miniMapBombero.setView([data.lat, data.lng], 16);
 
+        // C) Gestionar la capa de forma segura
+        if (!miniMapLayerBombero) {
+            miniMapLayerBombero = L.tileLayer(tileUrl, { attribution: '&copy; OpenStreetMap' }).addTo(miniMapBombero);
+        } else {
+            miniMapLayerBombero.setUrl(tileUrl);
+        }
+        
         miniMapBombero.invalidateSize();
-        
-        // ⚡ RESTAURACIÓN DEL MARCADOR
-        if (miniMapMarker) miniMapBombero.removeLayer(miniMapMarker);
-        
-        // Creación del icono táctico
+
+        // D) Renderizar marcador
+        if (miniMapMarkerBombero) miniMapBombero.removeLayer(miniMapMarkerBombero);
+
         let customIcon = L.divIcon({
-             html: `<div class="w-8 h-8 rounded-full bg-${data.color}-500 flex items-center justify-center text-white border-2 border-white shadow-[0_0_15px_rgba(0,0,0,0.5)] animate-bounce"><i class="fa-solid ${data.icon} text-sm"></i></div>`,
+             html: `<div class="w-8 h-8 rounded-full bg-${data.color}-500 flex items-center justify-center text-white dark:text-gray-900 border-2 border-white dark:border-[#121212] shadow-[0_0_15px_rgba(0,0,0,0.5)] dark:shadow-[0_0_15px_rgba(255,255,255,0.1)] animate-bounce"><i class="fa-solid ${data.icon} text-sm"></i></div>`,
              className: '', 
              iconSize: [32, 32], 
-             iconAnchor: [16, 32] // Punto de anclaje exacto en la punta inferior
+             iconAnchor: [16, 32]
         });
         
-        // Añadir el marcador a las coordenadas de la tarjeta
-        miniMapMarker = L.marker([data.lat, data.lng], { icon: customIcon }).addTo(miniMapBombero);
-        
-    }, 250); 
+        miniMapMarkerBombero = L.marker([data.lat, data.lng], { icon: customIcon }).addTo(miniMapBombero);
+      }, 250); 
 };
 
 window.cerrarModalBombero = function() {
@@ -3603,7 +3681,7 @@ function forceMapRepaint() {
   }, 100);
 }
 
-// TICKER DE NOTICIAS (migrado desde el js.html original)
+// TICKER DE NOTICIAS (Migrado y con camuflaje Light/Dark Mode)
 async function refreshOSINT() {
   try {
     const res = await ApiClient.request('/api/v1/sam/noticias/ticker');
@@ -3613,7 +3691,8 @@ async function refreshOSINT() {
     if (!tickerEl) return;
 
     if (noticias.length === 0) {
-      tickerEl.innerHTML = '<span class="mx-4 text-blue-500"><i class="fa-solid fa-satellite-dish fa-spin mr-1"></i> Esperando señales del radar OSINT...</span>';
+      // ⚡ Actualizado: Azul adaptable para el estado de carga
+      tickerEl.innerHTML = '<span class="mx-4 text-blue-600 dark:text-blue-500 font-bold"><i class="fa-solid fa-satellite-dish fa-spin mr-1"></i> Esperando señales del radar OSINT...</span>';
       return;
     }
 
@@ -3633,20 +3712,21 @@ async function refreshOSINT() {
       const textoVisible = `[${item.fuente}] ${item.titulo} (${fechaCorta})`;
       totalCaracteres += textoVisible.length + 20;
 
+      // ⚡ INYECCIÓN DE CAMUFLAJE (Light/Dark Mode)
       tickerHtml += `
         <a href="${item.enlace || '#'}" target="_blank" 
            class="mx-6 inline-flex items-center gap-1.5 text-[14px] cursor-pointer group transition-all"
            style="text-decoration: none;">
-          <b class="text-purple-400 font-bold group-hover:text-purple-300 drop-shadow-md">
-            ${(item.fuente || '').toUpperCase()}
+          <b class="text-purple-700 dark:text-purple-400 font-bold group-hover:text-purple-500 dark:group-hover:text-purple-300 drop-shadow-sm dark:drop-shadow-md">
+             ${(item.fuente || '').toUpperCase()}
           </b>
-          <span class="text-white group-hover:text-blue-400 transition-colors">
-            ${item.titulo || ''}
+          <span class="text-gray-800 dark:text-white font-medium group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+             ${item.titulo || ''}
           </span>
-          <span class="text-gray-400 text-[12px] font-console ml-1">
-            ${fechaCorta || ''}
+          <span class="text-gray-500 dark:text-gray-400 text-[12px] font-console ml-1">
+             ${fechaCorta || ''}
           </span>
-          <span class="mx-4 text-gray-700 pointer-events-none">|</span>
+          <span class="mx-4 text-gray-300 dark:text-gray-700 pointer-events-none">|</span>
         </a>`;
     });
 

@@ -30,6 +30,10 @@
     background: #3f3f46;
   }
 
+  .dark ::-webkit-scrollbar-thumb:hover {
+    background: #475569; 
+}
+
   /* ==========================================
      TICKER ANIMATION (CINTA INFERIOR)
      ========================================== */
@@ -667,4 +671,29 @@
 
 .leaflet-custom-theme a:hover {
     color: rgba(239, 68, 68, 1) !important;
+}
+
+/* ==========================================================================
+   🌍 CAMUFLAJE PARA LOS CRÉDITOS DE LEAFLET (Modo Claro/Oscuro)
+   ========================================================================== */
+
+/* ☀️ MODO CLARO (Por defecto) */
+.leaflet-control-attribution.leaflet-custom-theme {
+    background-color: rgba(255, 255, 255, 0.85) !important;
+    color: #4b5563 !important; /* Gris oscuro */
+    border-top-left-radius: 6px !important;
+    padding: 2px 6px !important;
+}
+.leaflet-control-attribution.leaflet-custom-theme a {
+    color: #0284c7 !important; /* Azul SUTRAN claro */
+    text-decoration: none;
+}
+
+/* 🌙 MODO OSCURO (Cuando el HTML tiene la clase .dark) */
+.dark .leaflet-control-attribution.leaflet-custom-theme {
+    background-color: rgba(18, 18, 18, 0.85) !important; /* Se funde con el fondo del modal */
+    color: #9ca3af !important; /* Gris claro/blanco tenue */
+}
+.dark .leaflet-control-attribution.leaflet-custom-theme a {
+    color: #38bdf8 !important; /* Cyan brillante para resaltar en negro */
 }
