@@ -7,7 +7,7 @@ let isWindLoading = false;
 let markerGroup, allMarkers = [], currentUser = null;
 let isDarkMode = true, isFullScreen = false, datosGlobales;
 let layerState = {
-  'LIVE_CAMS': false,
+  'LIVE_CAMS': true,
   'SEDES': false,
   'SUTRAN_INTERRUMPIDO': true,
   'SUTRAN_RESTRINGIDO': true,
@@ -143,7 +143,7 @@ async function refreshData() {
 
 async function cerrarSesion() {
   await AuthService.logout();
-  window.location.href = '/sam';
+  window.location.href = '/sam-engine';
 }
 
 // ========== MAPA ==========
@@ -392,9 +392,9 @@ if (motivo.includes('CLIMATOLOGICO')) {
         const markerIconColor = isDarkMode ? 'text-gray-900' : 'text-white';
         const idAcordeon = 'acord-sutran-' + idx;
         const iconSutran = L.divIcon({
-  html: `<div class="w-5 h-5 rounded-full bg-${colorTailwind}-500 icon-marker marker-rumble flex items-center justify-center text-white dark:text-gray-900"><i class="fa-solid ${iconClass} text-[12px]"></i></div>`,
-  className: '', iconSize: [20, 20], iconAnchor: [10, 10]
-});
+          html: `<div class="w-5 h-5 rounded-full bg-${colorTailwind}-500 icon-marker marker-rumble flex items-center justify-center text-white dark:text-gray-900 border border-white dark:border-[#121212]"><i class="fa-solid ${iconClass} text-[12px]"></i></div>`,
+          className: '', iconSize: [20, 20], iconAnchor: [10, 10]
+        });
         const marker = L.marker([lat, lng], { icon: iconSutran }).on('click', function() {
           enfocarDesdeMapa(lat, lng, idAcordeon, colorTailwind, 'ALERTAS SUTRAN');
         }).bindTooltip(
@@ -685,68 +685,294 @@ window.cerrarModalSutran = function() {
     // ================== 2. PROCESAR IGP ==============================================
     //////////////////////////////////////////////////////////////////////////////////////////
 
+    // ================== 2. PROCESAR IGP (REDISEÑO COMPLETO) ==================
     if(datos.igp && datos.igp.length > 0) {
+      
       datos.igp.sort((a, b) => parseDateGlobal(b['Fecha y Hora']) - parseDateGlobal(a['Fecha y Hora']));
-      let builderHtmlIgp = '<div class="space-y-2 font-sans">';
+      
+      const totalAlertas = datos.igp.length;
+      const topAlerta = datos.igp[0]; 
+      
+      let tarjetasHtml = '';  
+
       datos.igp.forEach(function(row, idx) {
          try {
            counts.igp.total++;
            var lat = parseFloat(row['Latitud']);
            var lng = parseFloat(row['Longitud']);
            var magVal = parseFloat(row['Magnitud']);
-           var mag = row['Magnitud'] || '-';
+           // ⚡ FIX TÁCTICO: Forzar siempre 1 decimal (Ej. 4 -> 4.0)
+           var magStr = !isNaN(magVal) ? magVal.toFixed(1) : (row['Magnitud'] || '-');
            
            let colorTailwind = 'green';
            let estadoIgp = 'LEVE';
            let layerId = 'IGP_LEVE';
 
            if (magVal >= 6.0) { colorTailwind = 'red'; estadoIgp = 'ALTO'; counts.igp.alto++; layerId = 'IGP_ALTO'; } 
-           else if (magVal >= 4.5) { colorTailwind = 'yellow'; estadoIgp = 'MODERADO'; counts.igp.moderado++; layerId = 'IGP_MODERADO'; }
+           else if (magVal >= 4.5) { colorTailwind = 'amber'; estadoIgp = 'MODERADO'; counts.igp.moderado++; layerId = 'IGP_MODERADO'; }
            else { counts.igp.leve++; }
+
+           let badgeEstado = `<span class="bg-transparent border border-${colorTailwind}-800/80 text-${colorTailwind}-600 dark:text-${colorTailwind}-500 px-1.5 py-0.5 rounded text-[8px] font-console tracking-wider uppercase flex items-center gap-1 shadow-sm">${estadoIgp}</span>`;
+
+           var idAcord = 'acord-igp-' + idx;
            
            if (!isNaN(lat) && !isNaN(lng)) {
-              var idAcord = 'acord-igp-' + idx;
               var iconIgp = L.divIcon({
-                 html: '<div class="w-5 h-5 rounded-full bg-' + colorTailwind + '-500 icon-marker marker-rumble flex items-center justify-center text-white dark:text-gray-900"><i class="fa-solid fa-hill-rockslide text-[12px]"></i></div>',
+                 html: `<div class="w-5 h-5 rounded-full bg-${colorTailwind}-500 icon-marker marker-rumble flex items-center justify-center text-white dark:text-gray-900 border border-white dark:border-[#121212]"><i class="fa-solid fa-hill-rockslide text-[12px]"></i></div>`,
                  className: '', iconSize: [20, 20], iconAnchor: [10, 10]
               });
               let marker = L.marker([lat, lng], { icon: iconIgp }).on('click', function() {
-                  enfocarDesdeMapa(lat, lng, idAcord, colorTailwind, 'ALERTAS IGP');
-              }).bindTooltip('<b class="font-sans text-[10px] uppercase text-'+colorTailwind+'-500">SISMO M ' + mag + '</b><br><span class="text-[9px] dark:text-gray-300">' + (row['Referencia'] || '') + '</span>', { className: 'custom-tooltip' });
+                 enfocarDesdeMapa(lat, lng, idAcord, colorTailwind, 'ALERTAS IGP');
+              }).bindTooltip(`<b class="font-sans text-[10px] uppercase text-${colorTailwind}-500">SISMO M ${magStr}</b><br><span class="text-[9px] dark:text-gray-300">${row['Referencia'] || ''}</span>`, { className: 'custom-tooltip' });
               allMarkers.push({ marker: marker, layerId: layerId });
            }
 
-           var idAcord = 'acord-igp-' + idx;
-           var accionClic = (!isNaN(lat) && !isNaN(lng)) ? "clickDesdeSidebar(" + lat + ", " + lng + ", '" + idAcord + "', '" + colorTailwind + "')" : "";
+           var accionClic = (!isNaN(lat) && !isNaN(lng)) ? `clickDesdeSidebar(${lat}, ${lng}, '${idAcord}', '${colorTailwind}')` : "";
+           
+           let referenciaStr = row['Referencia'] || '-';
+           let fechaStr = formatearFechaPeru(row['Fecha y Hora']) || '-';
+           let profundidadStr = row['Profundidad'] || '-';
+           let intensidadStr = row['Intensidad'] || '-';
 
-           builderHtmlIgp += '<div class="bg-white dark:bg-[#121212] border border-gray-200 dark:border-neutral-800 rounded shadow-sm hover:border-' + colorTailwind + '-500/50 transition-colors cursor-pointer overflow-hidden" onclick="' + accionClic + '">' +
-              '<div class="p-2.5 flex items-start gap-2">' +
-                '<div class="w-1 h-6 rounded bg-' + colorTailwind + '-500 mt-1 shrink-0"></div>' +
-                '<div class="flex-1">' +
-                  '<div class="flex justify-between items-start mb-0.5">' +
-                    '<h4 class="font-bold text-gray-900 dark:text-gray-200 text-[10px] leading-tight pr-2 uppercase">SISMO M ' + mag + '</h4>' +
-                    '<span class="text-' + colorTailwind + '-500 text-[8px] font-console px-1 border border-' + colorTailwind + '-500/30 rounded bg-' + colorTailwind + '-500/10 uppercase shrink-0">' + estadoIgp + '</span>' +
-                  '</div>' +
-                  '<p class="text-[9px] text-gray-500 dark:text-gray-500 font-medium truncate w-56 md:w-64"><i class="fa-solid fa-location-arrow"></i> ' + (row['Referencia'] || '-') + '</p>' +
-                '</div>' +
-              '</div>' +
-              '<div id="' + idAcord + '" class="expand-content bg-gray-50 dark:bg-[#0a0a0a] border-t border-gray-100 dark:border-neutral-800 px-3">' +
-                '<div class="grid grid-cols-2 gap-2 mb-2 mt-3">' +
-                  '<div><p class="text-[8px] text-gray-400 font-console uppercase tracking-wide">Fecha y hora</p><p class="text-[10px] text-gray-800 dark:text-gray-300">' + (formatearFechaPeru(row['Fecha y Hora']) || '-') + '</p></div>' +
-                  '<div><p class="text-[8px] text-gray-400 font-console uppercase tracking-wide">Profundidad</p><p class="text-[10px] text-gray-800 dark:text-gray-300 uppercase">' + (row['Profundidad'] || '-') + '</p></div>' +
-                  '<div><p class="text-[8px] text-gray-400 font-console uppercase tracking-wide">ID Reporte</p><p class="text-[10px] text-gray-800 dark:text-gray-300">' + (row['ID Reporte'] || '-') + '</p></div>' +
-                  '<div><p class="text-[8px] text-gray-400 font-console uppercase tracking-wide">Intensidad Máxima</p><p class="text-[10px] text-gray-800 dark:text-gray-300">' + (row['Intensidad'] || '-') + '</p></div>' +
-                '</div>' +
-                '<p class="text-[9px] text-blue-600 dark:text-blue-500 font-console text-center pb-2"><i class="fa-solid fa-earth-americas"></i> ' + lat + ', ' + lng + '</p>' +
-              '</div>' +
-            '</div>';
+           let dataSearchStr = `sismo magnitud ${magStr} ${referenciaStr} ${estadoIgp} ${intensidadStr}`.toLowerCase();
+           let dataModal = encodeURIComponent(JSON.stringify({
+               lat: lat, lng: lng, mag: magStr, ref: referenciaStr, fecha: fechaStr,
+               prof: profundidadStr, int: intensidadStr, estado: estadoIgp, color: colorTailwind
+           }));
 
-         } catch(e) {}
+           // --- TARJETA ITEM IGP ---
+           tarjetasHtml += `
+           <div id="${idAcord}" class="tarjeta-hud-igp bg-white dark:bg-[#121212] border border-gray-200 dark:border-gray-800 rounded-lg hover:border-${colorTailwind}-400 dark:hover:border-${colorTailwind}-500/50 transition-colors shadow-sm relative flex flex-col overflow-hidden group cursor-pointer p-2 min-h-0"
+                data-search="${dataSearchStr}" onclick="${accionClic}">
+                
+               <i class="fa-solid fa-hill-rockslide text-${colorTailwind}-500/10 absolute -bottom-3 -left-4 text-[6rem] z-0 pointer-events-none"></i>
+               
+               <div class="flex justify-between items-start w-full relative z-10 mb-0.5">
+                   <h4 class="text-${colorTailwind}-600 dark:text-${colorTailwind}-400 font-bold text-[11px] font-console leading-tight text-left flex-1 pr-2 mt-0.5">M ${magStr}</h4>
+                   <div class="shrink-0 ml-2">
+                       ${badgeEstado}
+                   </div>
+               </div>
+
+               <div class="flex flex-col items-end text-right w-full pl-6 relative z-10 space-y-0.5">
+                   <p class="text-gray-500 dark:text-gray-400 text-[8px] font-console"><i class="fa-regular fa-clock"></i> ${fechaStr}</p>
+                   
+                   <div class="w-full overflow-hidden text-[10px] text-gray-800 dark:text-gray-200 font-extrabold uppercase leading-tight smart-marquee-box relative">
+                       <div class="smart-marquee-text whitespace-nowrap inline-block">${referenciaStr}</div>
+                   </div>
+                   
+                   <p class="text-gray-500 dark:text-gray-400 text-[8px] font-console uppercase mt-1">PROF: <span class="font-bold text-gray-700 dark:text-gray-300">${profundidadStr}</span> | INT: <span class="font-bold text-gray-700 dark:text-gray-300">${intensidadStr}</span></p>
+               </div>
+
+               <div class="flex justify-between items-end w-full relative z-20 mt-1 pt-1 border-t border-gray-200 dark:border-gray-800/50">
+                   <button onclick="abrirModalIgp(event, '${dataModal}')" 
+                           class="w-6 h-6 flex items-center justify-center border border-gray-300 dark:border-gray-700 rounded bg-gray-50 dark:bg-[#1a1a1a] hover:bg-gray-200 dark:hover:bg-[#2a2a2a] text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                       <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>
+                   </button>
+                   <div class="flex items-center gap-1 text-[8px] text-green-600 dark:text-green-500/80 font-console">
+                       <i class="fa-solid fa-location-dot"></i> <span>${lat}, ${lng}</span>
+                   </div>
+               </div>
+           </div>
+           `;
+         } catch(e) { console.error("Error procesando IGP:", e); }
       });
-      htmlListaIgp = builderHtmlIgp + '</div>';
-      let cardIgp = document.querySelector('div[onclick*="ALERTAS IGP"] p.text-xl');
-      if (cardIgp) cardIgp.innerText = datos.igp.length;
+
+      // --- CABECERA HUD IGP ---
+      let topMagVal = parseFloat(topAlerta['Magnitud']);
+      // ⚡ FIX TÁCTICO: 1 decimal para los contadores grandes
+      let topMagStr = !isNaN(topMagVal) ? topMagVal.toFixed(1) : '0.0';
+      let topFechaStr = formatearFechaPeru(topAlerta['Fecha y Hora']) || '-';
+      
+      let headerHtml = `
+      <div class="sticky top-0 bg-white dark:bg-[#0a0a0a] z-[100] w-full pt-3 pb-2 border-b border-gray-200 dark:border-gray-800 shadow-[0_5px_15px_rgba(0,0,0,0.05)] dark:shadow-[0_10px_20px_rgba(0,0,0,0.8)] px-0 transition-colors">
+          <div class="px-3">
+
+              <div class="bg-green-50 dark:bg-[#161a16] border border-green-200 dark:border-green-900/30 rounded-lg p-3 mb-3 relative overflow-hidden flex shadow-sm dark:shadow-lg transition-colors">
+                  <i class="fa-solid fa-hill-rockslide text-green-500/10 dark:text-green-500/5 absolute -right-4 -bottom-4 text-7xl"></i>
+                  
+                  <div class="w-1/3 flex flex-col justify-center border-r border-green-200 dark:border-gray-700/50 pr-3">
+                      <h3 class="text-green-600 dark:text-green-500 font-bold tracking-widest uppercase text-[10px] mb-1">SISMOS</h3>
+                      <span class="text-green-600 dark:text-green-500 font-bold text-5xl font-console leading-none" id="hud-contador-igp">${topMagStr}</span>
+                      <span class="text-gray-500 dark:text-gray-500 font-console text-[8px] uppercase mt-1">MÁS RECIENTE</span>
+                  </div>
+                  
+                  <div class="w-2/3 pl-3 text-right flex flex-col items-end justify-center relative z-10">
+                      <span class="border border-green-300 dark:border-green-800/50 text-green-600 dark:text-green-500 px-2 py-0.5 rounded text-[8px] font-console tracking-wider uppercase mb-1 flex items-center gap-1 shadow-sm bg-white/50 dark:bg-transparent">
+                          <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span> ÚLTIMO EVENTO
+                      </span>
+                      <p class="text-gray-500 dark:text-gray-400 text-[9px] font-console line-clamp-1 mb-1" id="hud-last-time-igp"><i class="fa-regular fa-clock"></i> ${topFechaStr}</p>
+                      <h4 class="font-bold text-gray-800 dark:text-gray-200 text-[10px] leading-tight pr-2 uppercase line-clamp-2" id="hud-last-alert-igp">
+                          ${topAlerta['Referencia'] || ''}
+                      </h4>
+                  </div>
+              </div>
+
+              <div class="relative">
+                  <i class="fa-solid fa-crosshairs absolute left-3 top-2.5 text-gray-400 dark:text-gray-500 text-sm"></i>
+                  <input type="text" id="buscador-igp" onkeyup="filtrarRadarIgp(this.value)" 
+                         class="w-full bg-gray-50 dark:bg-[#121212] border border-gray-300 dark:border-gray-700 text-gray-800 dark:text-gray-300 text-xs rounded-md focus:ring-green-500 focus:border-green-500 block pl-9 p-2 font-console placeholder-gray-400 dark:placeholder-gray-600 outline-none transition-colors" 
+                         placeholder="Interceptar: Magnitud, Referencia...">
+              </div>
+          </div>
+      </div>
+
+      <div id="lista-tarjetas-igp" class="pl-3 pr-1 flex flex-col gap-2 p-3 pb-10 px-0 mt-2">
+          ${tarjetasHtml}
+      </div>
+      `;
+
+      htmlListaIgp = headerHtml;
+
+      // ACTUALIZACIÓN EN VIVO HUD GENERAL Y SIDEBAR
+      if(document.getElementById('hud-igp-mag')) document.getElementById('hud-igp-mag').innerText = topMagStr;
+      if(document.getElementById('hud-contador-igp')) document.getElementById('hud-contador-igp').innerText = topMagStr;
+      if(document.getElementById('hud-last-alert-igp')) document.getElementById('hud-last-alert-igp').innerText = topAlerta['Referencia'] || '';
+      if(document.getElementById('hud-last-time-igp')) document.getElementById('hud-last-time-igp').innerHTML = `<i class="fa-regular fa-clock"></i> ${topFechaStr}`;
+
+      if(document.getElementById('lista-tarjetas-igp')) {
+        document.getElementById('lista-tarjetas-igp').innerHTML = tarjetasHtml;
+        setTimeout(() => { if (typeof activarMarqueesInteligentes === 'function') activarMarqueesInteligentes(); }, 100);
+      }
     }
+
+    /**
+ * SONDA DE FILTRADO TÁCTICO - IGP
+ */
+window.filtrarRadarIgp = function(termino) {
+    termino = termino.toLowerCase().trim();
+    const tarjetas = document.querySelectorAll('.tarjeta-hud-igp');
+    
+    tarjetas.forEach(tarjeta => {
+        const dataSearch = tarjeta.getAttribute('data-search') || "";
+        if (dataSearch.includes(termino)) {
+            tarjeta.style.display = 'block';
+        } else {
+            tarjeta.style.display = 'none';
+        }
+    });
+};
+
+// Variables Globales para el Minimapa IGP
+let miniMapIgp = null;
+let miniMapMarkerIgp = null;
+let miniMapLayerIgp = null;
+
+/**
+ * ABRE EL MODAL DE CAPTURA - IGP
+ */
+window.abrirModalIgp = function(event, dataStringUrlEncoded) {
+    event.stopPropagation();
+    
+    try {
+        const data = JSON.parse(decodeURIComponent(dataStringUrlEncoded));
+        
+        // Inyectamos datos de texto
+        document.getElementById('modal-igp-mag').innerText = data.mag;
+        document.getElementById('modal-igp-ref').innerText = data.ref || '-';
+        document.getElementById('modal-igp-fecha').innerText = data.fecha || '-';
+        document.getElementById('modal-igp-prof').innerText = data.prof || '-';
+        document.getElementById('modal-igp-int').innerText = data.int || '-';
+        document.getElementById('modal-igp-coords').innerText = `${data.lat || 0}, ${data.lng || 0}`;
+        
+        // Badge dinámico
+        const badgeContainer = document.getElementById('modal-igp-badge-container');
+        if (badgeContainer) {
+            badgeContainer.innerHTML = `<span class="bg-transparent border border-${data.color}-800/80 text-${data.color}-600 dark:text-${data.color}-500 px-2 py-1 rounded text-[10px] font-console tracking-wider uppercase flex items-center shadow-sm">${data.estado}</span>`;
+        }
+
+        // Color del ícono de la cabecera
+        const headerIcon = document.getElementById('modal-igp-icon');
+        if (headerIcon) {
+            headerIcon.className = `fa-solid fa-hill-rockslide text-${data.color}-500`;
+        }
+
+        const modal = document.getElementById('modal-captura-igp');
+        modal.classList.remove('hidden');
+        
+        setTimeout(() => {
+            const transformEl = modal.querySelector('.transform');
+            if (transformEl) {
+                transformEl.classList.remove('scale-95');
+                transformEl.classList.add('scale-100');
+            }
+        }, 10);
+
+        modal.onclick = function(e) {
+            if (e.target === modal) cerrarModalIgp();
+        };
+
+        // Renderizado del Minimapa IGP
+        setTimeout(() => {
+            const isDark = document.documentElement.classList.contains('dark');
+            const tileUrl = isDark 
+                ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' 
+                : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+            
+            if (!miniMapIgp) {
+                miniMapIgp = L.map('minimapa-igp', { zoomControl: false, attributionControl: false });
+            }
+            
+            miniMapIgp.setView([data.lat, data.lng], 12); // Menos zoom para abarcar sismos (12 en vez de 16)
+
+            if (!miniMapLayerIgp) {
+                miniMapLayerIgp = L.tileLayer(tileUrl, { attribution: '&copy; OpenStreetMap' }).addTo(miniMapIgp);
+            } else {
+                miniMapLayerIgp.setUrl(tileUrl);
+            }
+            
+            miniMapIgp.invalidateSize();
+
+            if (miniMapMarkerIgp) miniMapIgp.removeLayer(miniMapMarkerIgp);
+            
+            const customIcon = L.divIcon({
+                html: `<div class="w-8 h-8 rounded-full bg-${data.color}-500 flex items-center justify-center text-white dark:text-gray-900 border-2 border-white dark:border-[#121212] shadow-[0_0_15px_rgba(0,0,0,0.5)] dark:shadow-[0_0_15px_rgba(255,255,255,0.1)] animate-bounce"><i class="fa-solid fa-hill-rockslide text-sm"></i></div>`,
+                className: '',
+                iconSize: [32, 32],
+                iconAnchor: [16, 32] 
+            });
+            
+            miniMapMarkerIgp = L.marker([data.lat, data.lng], { icon: customIcon }).addTo(miniMapIgp);
+            
+            // Añadir un círculo de impacto sísmico (opcional y táctico)
+            L.circle([data.lat, data.lng], {
+                color: `var(--tw-colors-${data.color}-500)`,
+                fillColor: `var(--tw-colors-${data.color}-500)`,
+                fillOpacity: 0.1,
+                radius: data.mag * 5000 // Radio visual basado en la magnitud
+            }).addTo(miniMapIgp);
+
+        }, 250);
+
+    } catch (error) {
+        console.error("SAM: Error al parsear datos de IGP para el modal", error);
+    }
+};
+
+window.cerrarModalIgp = function() {
+    const modal = document.getElementById('modal-captura-igp');
+    if (!modal) return;
+    
+    modal.onclick = null;
+    const transformEl = modal.querySelector('.transform');
+    
+    if (transformEl) {
+        transformEl.classList.remove('scale-100');
+        transformEl.classList.add('scale-95');
+    }
+    
+    setTimeout(() => { 
+        modal.classList.add('hidden'); 
+        // Limpiamos los círculos de impacto sísmico
+        if (miniMapIgp) {
+            miniMapIgp.eachLayer((layer) => {
+                if (layer instanceof L.Circle) {
+                    miniMapIgp.removeLayer(layer);
+                }
+            });
+        }
+    }, 200);
+};
 
     //////////////////////////////////////////////////////////////////////////////////////////
     // ================== 3. PROCESAR BOMBEROS ==============================================
@@ -847,7 +1073,7 @@ window.cerrarModalSutran = function() {
            else if (tituloEmergencia.includes('MAT') || tituloEmergencia.includes('PELIGROSOS')) { iconClass = 'fa-biohazard'; baseColor = 'red'; typeKey = 'MATPEL'; }
            else if (tituloEmergencia.includes('RESCATE')) { iconClass = 'fa-life-ring'; baseColor = 'amber'; typeKey = 'RESCATE'; }
 
-           let colorTailwind = isCerrado ? 'gray' : baseColor;
+           let colorTailwind = isCerrado ? 'green' : baseColor;
            
            let badgeEstado = isCerrado
                ? `<span class="bg-transparent border border-gray-600 text-gray-400 px-1.5 py-0.5 rounded text-[8px] font-console tracking-wider uppercase flex items-center gap-1 shadow-sm"><i class="fa-solid fa-check text-[8px]"></i>CERRADO</span>`
@@ -859,7 +1085,7 @@ window.cerrarModalSutran = function() {
            if (!isNaN(lat) && !isNaN(lng)) {
               let layerId = isCerrado ? 'CGBVP_CERRADO' : 'CGBVP_' + typeKey;
               var iconBomb = L.divIcon({
-                 html: `<div class="w-5 h-5 rounded-full bg-${colorTailwind}-500 icon-marker marker-rumble flex items-center justify-center text-white dark:text-gray-900"><i class="fa-solid ${iconClass} text-[12px]"></i></div>`,
+                 html: `<div class="w-5 h-5 rounded-full bg-${colorTailwind}-500 icon-marker marker-rumble flex items-center justify-center text-white dark:text-gray-900 border border-white dark:border-[#121212]"><i class="fa-solid ${iconClass} text-[12px]"></i></div>`,
                  className: '', iconSize: [20, 20], iconAnchor: [10, 10]
               });
               let marker = L.marker([lat, lng], { icon: iconBomb }).on('click', function() {
@@ -1132,7 +1358,7 @@ window.cerrarModalBombero = function() {
             lat = parseFloat(pts[0].trim()); lng = parseFloat(pts[1].trim());
             if (!isNaN(lat) && !isNaN(lng)) {
               let iconSede = L.divIcon({
-                 html: '<div class="w-6 h-6 rounded-md bg-blue-600 icon-marker flex items-center justify-center text-white dark:text-gray-900"><i class="fa-solid fa-warehouse text-[14px]"></i></div>',
+                 html: '<div class="w-6 h-6 rounded-md bg-blue-600 icon-marker flex items-center justify-center text-white dark:text-gray-900"><i class="fa-solid fa-warehouse text-[12px]"></i></div>',
                  className: '', iconSize: [24, 24], iconAnchor: [12, 12]
               });
               let nombreSede = row['Sede'] || 'Sede Dinet';
@@ -1152,161 +1378,420 @@ window.cerrarModalBombero = function() {
         } catch(e) {}
       });
     }
+///////////////////////////////////////////////////////////////////////////////
+// ================== 5. PROCESAR ESTADO DE PUERTOS (DICAPI) ==================
+///////////////////////////////////////////////////////////////////////////////
 
-    // ================== 5.5 PROCESAR DICAPI (FUSIÓN NAVAL) ==================
-    let ultimoPuerto = null;
-    let ultimaFechaCambioDicapi = 0;
+let ultimoPuerto = null;
+let ultimaFechaCambioDicapi = 0;
+
+if (datos.dicapi && datos.dicapi.length > 0) {
+    if (!sysMemory.dicapi || sysMemory.dicapi instanceof Set) { sysMemory.dicapi = {}; }
     
-    if (datos.dicapi && datos.dicapi.length > 0) {
-        if (!sysMemory.dicapi || sysMemory.dicapi instanceof Set) { sysMemory.dicapi = {}; }
-        
-        let puertosPorCapitania = {};
-        let idMarcadoresNuevos = [];
-        ultimaDataDicapi = datos.dicapi; 
+    let capitaniasMap = {};
+    let idMarcadoresNuevos = [];
+    
+    // ⚡ FIX FATAL: Restaurada la nomenclatura original para evitar fallos en cadena
+    counts.dicapi = { total: 0, verde: 0, rojo: 0, ambar: 0 }; 
+    ultimaDataDicapi = datos.dicapi;
 
-        datos.dicapi.forEach(function(row, idx) {
-            try {
-                counts.dicapi.total++;
-                let pCapitania = row['CAPITANÍA'] || "DESCONOCIDA";
-                let pNombre = row['NOMBRE DEL PUERTO'] || "SIN NOMBRE";
-                let pNivel = row['NIVEL'] || "N/A";
-                let estadoTxt = String(row['ESTADO LOGÍSTICO']).trim();
-                let lat = parseFloat(row['LATITUD']);
-                let lng = parseFloat(row['LONGITUD']);
-                let fechaFormat = row['FECHA REPORTE'];
-                let resolucion = row['RESOLUCIÓN MGP'] || "S/N";
+    // 1. AGRUPACIÓN Y ANÁLISIS TÁCTICO
+    datos.dicapi.forEach(function(row, idx) {
+        try {
+            counts.dicapi.total++;
+            let pCapitania = row['CAPITANÍA'] || "DESCONOCIDA";
+            let pNombre = row['PUERTO'] || row['NOMBRE DEL PUERTO'] || "SIN NOMBRE";
+            let pNivel = row['NIVEL'] || "N/A";
+            let estadoTxt = String(row['ESTADO LOGÍSTICO']).trim().toUpperCase();
+            let lat = parseFloat(row['LATITUD']);
+            let lng = parseFloat(row['LONGITUD']);
+            let fechaFormat = row['FECHA REPORTE'];
+            let resolucion = row['RESOLUCIÓN MGP'] || "S/N";
 
-                let tipoAlerta = "VERDE"; 
-                let statusClass = "dicapi-icon-green";
-                let colorTailwind = "green";
-                let layerId = "DICAPI_VERDE";
-                let txtEstadoFront = "ABIERTO";
-                let zIndexOffset = 0;
+            let tipoAlerta = "VERDE"; 
+            let colorTailwind = "green";
+            let layerId = "DICAPI_VERDE";
+            let txtEstadoFront = "ABIERTO";
+            let iconClass = "fa-lock-open";
+            let zIndexOffset = 0;
 
-                if (estadoTxt.indexOf("Cierre Parcial") !== -1) {
-                    tipoAlerta = "AMBAR"; counts.dicapi.ambar++; colorTailwind = "amber"; layerId = "DICAPI_AMBAR"; statusClass = "dicapi-icon-amber"; txtEstadoFront = "PARCIAL"; zIndexOffset = 500;
-                } else if (estadoTxt.indexOf("Cierre Total") !== -1) {
-                    tipoAlerta = "ROJO"; counts.dicapi.rojo++; colorTailwind = "red"; layerId = "DICAPI_ROJO"; statusClass = "dicapi-icon-red"; txtEstadoFront = "CERRADO"; zIndexOffset = 1000;
-                } else {
-                    counts.dicapi.verde++;
-                }
-
-                let fechaReporteUnix = parseDateGlobal(fechaFormat);
-                if (tipoAlerta !== "VERDE" && fechaReporteUnix > ultimaFechaCambioDicapi) {
-                    ultimaFechaCambioDicapi = fechaReporteUnix;
-                    ultimoPuerto = { nombre: pNombre, capitania: pCapitania, estado: tipoAlerta, fechaTxt: fechaFormat };
-                }
-
-                let estadoGuardado = sysMemory.dicapi[pNombre];
-                let tempPulseClass = "";
-                if (tipoAlerta !== "VERDE" && estadoGuardado !== undefined && estadoGuardado !== tipoAlerta) {
-                    tempPulseClass = "dicapi-pulse-temp-" + colorTailwind + " temp-pulse-dicapi-" + idx;
-                    idMarcadoresNuevos.push("temp-pulse-dicapi-" + idx);
-                    if (!isFirstLoad) triggerCardAlarm("ESTADO DE PUERTOS");
-                }
-                sysMemory.dicapi[pNombre] = tipoAlerta;
-
-                if (!puertosPorCapitania[pCapitania]) puertosPorCapitania[pCapitania] = { abiertas: 0, parciales: 0, cerradas: 0, puertos: [] };
-                if (tipoAlerta === "ROJO") puertosPorCapitania[pCapitania].cerradas++;
-                else if (tipoAlerta === "AMBAR") puertosPorCapitania[pCapitania].parciales++;
-                else puertosPorCapitania[pCapitania].abiertas++;
-
-                let idAcord = "acord-dicapi-" + idx;
-                puertosPorCapitania[pCapitania].puertos.push({
-                    nombre: pNombre, lat: lat, lng: lng, idAcordeon: idAcord, colorTailwind: colorTailwind, txtEstadoFront: txtEstadoFront, nivel: pNivel, resolucion: resolucion, estado: tipoAlerta
-                });
-
-                if (!isNaN(lat) && !isNaN(lng)) {
-                    let htmlIcon = "<div class='custom-dicapi-icon " + statusClass + " " + tempPulseClass + "'></div>";
-                    let icon = L.divIcon({ className: "div-icon-dicapi-wrapper", html: htmlIcon, iconSize: [10, 10], iconAnchor: [5, 5], tooltipAnchor: [5, 0] });
-                    let tooltipContent = "<b class='font-sans text-[10px] uppercase text-" + colorTailwind + "-500'><i class='fa-solid fa-anchor'></i> " + pNombre + "</b><br><span class='text-[9px] dark:text-gray-300'>Capitanía: " + pCapitania + "</span>";
-                    let marker = L.marker([lat, lng], { icon: icon, zIndexOffset: zIndexOffset })
-                        .on("click", function() { enfocarDesdeMapa(lat, lng, idAcord, colorTailwind, "ESTADO DE PUERTOS"); })
-                        .bindTooltip(tooltipContent, { className: "custom-tooltip", direction: "top", offset: [0, -6] });
-                    
-                    allMarkers.push({ marker: marker, layerId: layerId });
-                }
-            } catch(e) {}
-        });
-
-        if (idMarcadoresNuevos.length > 0) {
-            setTimeout(() => {
-                idMarcadoresNuevos.forEach(idClass => {
-                    document.querySelectorAll("." + idClass).forEach(el => el.classList.remove("dicapi-pulse-temp-red", "dicapi-pulse-temp-amber", idClass));
-                });
-            }, 30000);
-        }
-
-        globalDicapiCounts = { total: counts.dicapi.total, rojo: counts.dicapi.rojo, ambar: counts.dicapi.ambar, verde: counts.dicapi.verde };
-
-        if (document.getElementById("dicapi-count")) document.getElementById("dicapi-count").innerText = counts.dicapi.rojo + counts.dicapi.ambar;
-        if (document.getElementById("dicapi-total")) document.getElementById("dicapi-total").innerText = counts.dicapi.total;
-
-        let badgeContainer = document.getElementById("hud-dicapi-badge");
-        let wrapper = document.getElementById("hud-dicapi-last"); 
-        if (wrapper && badgeContainer) {
-            if (ultimoPuerto) {
-                let color = ultimoPuerto.estado === "ROJO" ? "red" : "amber";
-                let txtEst = ultimoPuerto.estado === "ROJO" ? "CERRADO" : "PARCIAL";
-                badgeContainer.innerHTML = "<span class='bg-" + color + "-500/10 text-" + color + "-500 border border-" + color + "-500/30 px-1.5 py-[1px] rounded text-[9px] font-console uppercase tracking-widest flex items-center gap-1.5 dark:shadow-[0_0_5px_rgba(0,0,0,0.5)]'><div class='w-1.5 h-1.5 rounded-full bg-" + color + "-500 animate-pulse shadow-[0_0_4px_currentColor]'></div> " + txtEst + "</span>";
-                wrapper.innerHTML = "<span class='text-[9px] font-console text-gray-400 leading-none uppercase flex items-center justify-end gap-1 w-full'><i class='fa-regular fa-clock'></i> " + ultimoPuerto.fechaTxt + "</span>" +
-                                     "<span class='truncate block text-[11px] font-bold text-gray-800 dark:text-gray-200 leading-tight mt-1.5 mb-0.5 uppercase text-right w-full' title='" + ultimoPuerto.nombre + "'>" + ultimoPuerto.nombre + "</span>" +
-                                     "<span class='truncate block text-[9.5px] text-gray-500 font-bold uppercase text-right w-full'>CAPITANÍA: " + ultimoPuerto.capitania + "</span>";
+            if (estadoTxt.includes("PARCIAL")) {
+                tipoAlerta = "AMBAR"; counts.dicapi.ambar++; colorTailwind = "amber"; layerId = "DICAPI_AMBAR"; txtEstadoFront = "PARCIAL"; iconClass = "fa-triangle-exclamation"; zIndexOffset = 500;
+            } else if (estadoTxt.includes("CERRADO") || estadoTxt.includes("TOTAL")) {
+                tipoAlerta = "ROJO"; counts.dicapi.rojo++; colorTailwind = "red"; layerId = "DICAPI_ROJO"; txtEstadoFront = "CERRADO"; iconClass = "fa-lock"; zIndexOffset = 1000;
             } else {
-                badgeContainer.innerHTML = "<span class='bg-green-500/10 text-green-500 border border-green-500/30 px-1.5 py-[1px] rounded text-[9px] font-console uppercase tracking-widest flex items-center gap-1.5'><div class='w-1.5 h-1.5 rounded-full bg-green-500'></div> ABIERTO</span>";
-                wrapper.innerHTML = "<span class='text-[9px] font-console text-gray-400 leading-none uppercase flex items-center justify-end gap-1 w-full'><i class='fa-regular fa-clock'></i> --/--/---- --:--:--</span>" +
-                                     "<span class='truncate block text-[11px] font-bold text-gray-800 dark:text-gray-200 leading-tight mt-1.5 mb-0.5 uppercase text-right w-full'>TODOS LOS PUERTOS</span>" +
-                                     "<span class='truncate block text-[9.5px] text-gray-500 font-bold uppercase text-right w-full'>SISTEMA NORMAL</span>";
+                counts.dicapi.verde++;
             }
-        }
 
-        let htmlConstructor = "<div class='space-y-3 font-sans px-1'>";
-        Object.keys(puertosPorCapitania).sort().forEach(capName => {
-            let cat = puertosPorCapitania[capName];
-            cat.puertos.sort((a, b) => { let peso = { "ROJO": 3, "AMBAR": 2, "VERDE": 1 }; return peso[b.estado] - peso[a.estado]; });
+            // Memoria Táctica: Detectar el último cambio real
+            let fechaReporteUnix = parseDateGlobal(fechaFormat);
+            if (tipoAlerta !== "VERDE" && fechaReporteUnix > ultimaFechaCambioDicapi) {
+                ultimaFechaCambioDicapi = fechaReporteUnix;
+                ultimoPuerto = { nombre: pNombre, capitania: pCapitania, estado: txtEstadoFront, color: colorTailwind, fechaTxt: formatearFechaPeru(fechaFormat) || fechaFormat };
+            }
+
+            // Memoria Táctica: Alarmas Visuales Temporales
+            let estadoGuardado = sysMemory.dicapi[pNombre];
+            let tempPulseClass = "";
+            if (tipoAlerta !== "VERDE" && estadoGuardado !== undefined && estadoGuardado !== tipoAlerta) {
+                tempPulseClass = `animate-pulse ring-4 ring-${colorTailwind}-500/50 temp-pulse-dicapi-${idx}`;
+                idMarcadoresNuevos.push(`temp-pulse-dicapi-${idx}`);
+                if (!isFirstLoad && typeof triggerCardAlarm === 'function') triggerCardAlarm("ESTADO DE PUERTOS");
+            }
+            sysMemory.dicapi[pNombre] = tipoAlerta;
+
+            // Agrupación por Capitanía
+            if (!capitaniasMap[pCapitania]) {
+                capitaniasMap[pCapitania] = { abiertas: 0, parciales: 0, cerradas: 0, puertos: [] };
+            }
+            if (tipoAlerta === "ROJO") capitaniasMap[pCapitania].cerradas++;
+            else if (tipoAlerta === "AMBAR") capitaniasMap[pCapitania].parciales++;
+            else capitaniasMap[pCapitania].abiertas++;
+
+            let idAcord = `acord-dicapi-${idx}`;
             
-            htmlConstructor += "<div class='bg-gray-100 dark:bg-[#1a1a1a] border border-gray-300 dark:border-neutral-700 rounded p-2 shadow-sm mb-3'>" +
-                "<h3 class='font-bold text-gray-800 dark:text-gray-200 text-[11px] uppercase tracking-widest mb-2 flex items-center gap-2 border-b border-gray-200 dark:border-neutral-600 pb-1'>" +
-                    "<i class='fa-solid fa-building-flag text-blue-500'></i> CAPITANÍA: " + capName +
-                "</h3>" +
-                "<div class='flex gap-2 mb-2'>" +
-                    "<span class='text-[9px] bg-red-500/10 text-red-500 border border-red-500/30 px-1.5 rounded font-console' title='Cerrados'>" + cat.cerradas + " <i class='fa-solid fa-lock'></i></span>" +
-                    "<span class='text-[9px] bg-amber-500/10 text-amber-500 border border-amber-500/30 px-1.5 rounded font-console' title='Parciales'>" + cat.parciales + " <i class='fa-solid fa-lock-open'></i></span>" +
-                    "<span class='text-[9px] bg-green-500/10 text-green-500 border border-green-500/30 px-1.5 rounded font-console' title='Abiertos'>" + cat.abiertas + " <i class='fa-solid fa-check'></i></span>" +
-                "</div>" +
-                "<div class='space-y-1.5'>";
+            // Renderizado del Marcador en el Mapa Principal (Puntos minimalistas)
+            if (!isNaN(lat) && !isNaN(lng)) {
+                // ⚡ DICAPI: Punto de 10px limpio, sin shadow
+                let htmlIcon = `<div class="w-2.5 h-2.5 rounded-full bg-${colorTailwind}-500 border border-white dark:border-[#121212] ${tempPulseClass}"></div>`;
+                
+                let icon = L.divIcon({ 
+                    className: "", // Quitamos las clases extra que puedan interferir
+                    html: htmlIcon, 
+                    iconSize: [10, 10], 
+                    iconAnchor: [5, 5] 
+                });
+                
+                let tooltipContent = `<b class="font-sans text-[10px] uppercase text-${colorTailwind}-500"><i class="fa-solid fa-anchor"></i> ${pNombre}</b><br><span class="text-[9px] dark:text-gray-300">Capitanía: ${pCapitania}<br>Estado: ${txtEstadoFront}</span>`;
+                
+                let marker = L.marker([lat, lng], { icon: icon, zIndexOffset: zIndexOffset })
+                    .on("click", function() { enfocarDesdeMapa(lat, lng, idAcord, colorTailwind, "ESTADO DE PUERTOS"); })
+                    .bindTooltip(tooltipContent, { className: "custom-tooltip", direction: "top", offset: [0, -6] });
+                
+                allMarkers.push({ marker: marker, layerId: layerId });
+            }
 
-            cat.puertos.forEach(p => {
-                let accionClic = "clickDesdeSidebar(" + p.lat + ", " + p.lng + ", '" + p.idAcordeon + "', '" + p.colorTailwind + "')";
-                htmlConstructor += "<div class='bg-white dark:bg-[#121212] border border-gray-200 dark:border-neutral-800 rounded hover:border-" + p.colorTailwind + "-500/50 cursor-pointer overflow-hidden' onclick=\"" + accionClic + "\">" +
-                    "<div class='p-2 flex items-center justify-between'>" +
-                        "<div class='flex items-center gap-2'>" +
-                            "<span class='w-2 h-2 rounded-full bg-" + p.colorTailwind + "-500 shrink-0'></span>" +
-                            "<span class='text-[10px] font-bold text-gray-800 dark:text-gray-200 uppercase truncate w-40'>" + p.nombre + "</span>" +
-                        "</div>" +
-                        "<span class='text-[8px] font-console bg-" + p.colorTailwind + "-500/10 text-" + p.colorTailwind + "-500 border border-" + p.colorTailwind + "-500/30 px-1 rounded uppercase tracking-wider shrink-0'>" + p.txtEstadoFront + "</span>" +
-                    "</div>" +
-                    "<div id='" + p.idAcordeon + "' class='expand-content bg-gray-50 dark:bg-[#0a0a0a] border-t border-gray-100 dark:border-neutral-800 px-3'>" +
-                        "<div class='grid grid-cols-2 gap-2 mb-2 mt-2'>" +
-                            "<div><p class='text-[8px] text-gray-400 font-console uppercase tracking-wide'>Nivel</p><p class='text-[9px] text-gray-800 dark:text-gray-300 font-bold uppercase'>" + p.nivel + "</p></div>" +
-                            "<div><p class='text-[8px] text-gray-400 font-console uppercase tracking-wide'>Capitanía</p><p class='text-[9px] text-gray-800 dark:text-gray-300 font-bold uppercase'>" + capName + "</p></div>" +
-                            "<div class='col-span-2'><p class='text-[8px] text-gray-400 font-console uppercase tracking-wide'>Resolución MGP</p><p class='text-[9px] text-gray-800 dark:text-gray-300 uppercase'>" + p.resolucion + "</p></div>" +
-                        "</div>" +
-                        "<p class='text-[9px] text-blue-600 dark:text-blue-500 font-console text-center pb-2'><i class='fa-solid fa-earth-americas'></i> " + p.lat + ", " + p.lng + "</p>" +
-                    "</div>" +
-                "</div>";
+            // Datos para el Modal
+            let dataModal = encodeURIComponent(JSON.stringify({
+                lat: lat, lng: lng, puerto: pNombre, cap: pCapitania, fecha: formatearFechaPeru(fechaFormat) || '-',
+                nivel: pNivel, res: resolucion, estado: txtEstadoFront, color: colorTailwind, icon: "fa-anchor"
+            }));
+            let dataSearchStr = `${pNombre} ${pCapitania} ${txtEstadoFront} ${pNivel}`.toLowerCase();
+            let accionClic = (!isNaN(lat) && !isNaN(lng)) ? `clickDesdeSidebar(${lat}, ${lng}, '${idAcord}', '${colorTailwind}')` : "";
+
+            capitaniasMap[pCapitania].puertos.push({
+                html: `
+                <div id="${idAcord}" class="tarjeta-hud-dicapi bg-white dark:bg-[#121212] border border-gray-200 dark:border-gray-800 rounded-lg hover:border-${colorTailwind}-400 dark:hover:border-${colorTailwind}-500/50 transition-colors shadow-sm relative flex flex-col overflow-hidden group cursor-pointer p-2 min-h-0 ${tempPulseClass}"
+                     data-search="${dataSearchStr}" onclick="${accionClic}">
+                    
+                    <i class="fa-solid fa-anchor text-${colorTailwind}-500/10 absolute -bottom-3 -left-4 text-[6rem] z-0 pointer-events-none"></i>
+                    
+                    <div class="flex justify-between items-start w-full relative z-10 mb-0.5">
+                        <h4 class="text-gray-800 dark:text-gray-200 font-bold text-[10px] uppercase leading-tight text-left flex-1 pr-2 mt-0.5 line-clamp-1">${pNombre}</h4>
+                        <div class="shrink-0 ml-2">
+                            <span class="bg-transparent border border-${colorTailwind}-800/80 text-${colorTailwind}-600 dark:text-${colorTailwind}-500 px-1.5 py-0.5 rounded text-[8px] font-console tracking-wider uppercase flex items-center gap-1 shadow-sm"><i class="fa-solid ${iconClass} text-[8px]"></i>${txtEstadoFront}</span>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col items-end text-right w-full pl-6 relative z-10 space-y-0.5 mt-2">
+                        <p class="text-gray-500 dark:text-gray-400 text-[8px] font-console uppercase">NIVEL: <span class="font-bold text-gray-700 dark:text-gray-300">${pNivel}</span></p>
+                    </div>
+
+                    <div class="flex justify-between items-end w-full relative z-20 mt-1 pt-1 border-t border-gray-200 dark:border-gray-800/50">
+                        <button onclick="abrirModalDicapi(event, '${dataModal}')" 
+                                class="w-6 h-6 flex items-center justify-center border border-gray-300 dark:border-gray-700 rounded bg-gray-50 dark:bg-[#1a1a1a] hover:bg-gray-200 dark:hover:bg-[#2a2a2a] text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                            <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>
+                        </button>
+                        <div class="flex items-center gap-1 text-[8px] text-${colorTailwind}-600 dark:text-${colorTailwind}-500/80 font-console">
+                            <i class="fa-solid fa-clock"></i> <span>${formatearFechaPeru(fechaFormat) || '-'}</span>
+                        </div>
+                    </div>
+                </div>
+                `,
+                estado: txtEstadoFront
             });
-            htmlConstructor += "</div></div>";
-        });
-        htmlListaPuertos = htmlConstructor + "</div>";
 
-        let titleEl = document.getElementById("sidebar-title");
-        if (titleEl && titleEl.innerText === "ESTADO DE PUERTOS") {
+        } catch(e) { console.error("Error procesando DICAPI:", e); }
+    });
+
+    // Desactivar alarmas temporales
+    if (idMarcadoresNuevos.length > 0) {
+        setTimeout(() => {
+            idMarcadoresNuevos.forEach(idClass => {
+                document.querySelectorAll("." + idClass).forEach(el => el.classList.remove("animate-pulse", "ring-4", "ring-red-500/50", "ring-amber-500/50", idClass));
+            });
+        }, 30000);
+    }
+
+    // ⚡ FIX FATAL: Restauramos la variable global
+    globalDicapiCounts = { total: counts.dicapi.total, rojo: counts.dicapi.rojo, ambar: counts.dicapi.ambar, verde: counts.dicapi.verde };
+
+    // 2. CONSTRUCCIÓN DE LA INTERFAZ HTML
+    let tarjetasHtml = '';
+    
+    // Ordenar Capitanías
+    Object.keys(capitaniasMap).sort().forEach((capNombre) => {
+        let cat = capitaniasMap[capNombre];
+        let capSlug = capNombre.replace(/\s+/g, '-').toLowerCase();
+        
+        // Ordenar puertos (Rojo > Ámbar > Verde)
+        cat.puertos.sort((a, b) => { let peso = { "CERRADO": 3, "PARCIAL": 2, "ABIERTO": 1 }; return peso[b.estado] - peso[a.estado]; });
+        let htmlPuertos = cat.puertos.map(p => p.html).join('');
+
+        // Badges de Cabecera Expander
+        let badgesCap = '';
+        if (cat.cerradas > 0) badgesCap += `<span class="px-1.5 py-[1px] bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 rounded font-console text-[8px] flex items-center gap-1"><i class="fa-solid fa-lock"></i> ${cat.cerradas}</span>`;
+        if (cat.parciales > 0) badgesCap += `<span class="px-1.5 py-[1px] bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800 rounded font-console text-[8px] flex items-center gap-1"><i class="fa-solid fa-triangle-exclamation"></i> ${cat.parciales}</span>`;
+        if (cat.abiertas > 0) badgesCap += `<span class="px-1.5 py-[1px] bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 border border-green-200 dark:border-green-800 rounded font-console text-[8px] flex items-center gap-1"><i class="fa-solid fa-lock-open"></i> ${cat.abiertas}</span>`;
+
+        tarjetasHtml += `
+        <div class="dicapi-capitania-group border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden mb-2 bg-gray-50 dark:bg-[#151515]">
+            <div class="flex items-center justify-between p-2.5 bg-gray-100 dark:bg-[#1a1a1a] cursor-pointer hover:bg-gray-200 dark:hover:bg-[#222] transition-colors border-b border-gray-200 dark:border-gray-800" onclick="toggleCapitania('cap-${capSlug}', this)">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-building-flag text-blue-600 dark:text-blue-500 text-sm"></i>
+                    <h4 class="font-bold text-[10px] text-gray-800 dark:text-gray-200 uppercase tracking-wide">CAPITANÍA: ${capNombre}</h4>
+                </div>
+                <div class="flex items-center gap-1">
+                    ${badgesCap}
+                    <i class="fa-solid fa-chevron-up text-[10px] text-gray-400 ml-1 transition-transform duration-200 transform rotate-0 cap-arrow"></i>
+                </div>
+            </div>
+            <div id="cap-${capSlug}" class="cap-content flex flex-col gap-2 p-2 transition-all">
+                ${htmlPuertos}
+            </div>
+        </div>
+        `;
+    });
+
+    let gravesDicapi = counts.dicapi.rojo + counts.dicapi.ambar;
+    
+    // CABECERA HUD SIDEBAR
+    let topColor = "green"; let topTxt = "ABIERTO"; let topFecha = "--/--/----"; let topNombre = "TODOS LOS PUERTOS"; let topSub = "SISTEMA NORMAL";
+    if (ultimoPuerto) {
+        topColor = ultimoPuerto.color; topTxt = ultimoPuerto.estado; topFecha = ultimoPuerto.fechaTxt; topNombre = ultimoPuerto.nombre; topSub = `CAPITANÍA: ${ultimoPuerto.capitania}`;
+    }
+
+    let headerHtml = `
+    <div class="sticky top-0 bg-white dark:bg-[#0a0a0a] z-[100] w-full pt-3 pb-2 border-b border-gray-200 dark:border-gray-800 shadow-[0_5px_15px_rgba(0,0,0,0.05)] dark:shadow-[0_10px_20px_rgba(0,0,0,0.8)] px-0 transition-colors">
+        <div class="px-3">
+            <div class="bg-blue-50 dark:bg-[#16181a] border border-blue-200 dark:border-blue-900/30 rounded-lg p-3 mb-3 relative overflow-hidden flex shadow-sm dark:shadow-lg transition-colors">
+                <i class="fa-solid fa-anchor text-blue-500/10 dark:text-blue-500/5 absolute -right-4 -bottom-4 text-7xl"></i>
+                
+                <div class="w-1/3 flex flex-col justify-center border-r border-blue-200 dark:border-gray-700/50 pr-3">
+                    <h3 class="text-blue-600 dark:text-blue-500 font-bold tracking-widest uppercase text-[10px] mb-1">PUERTOS</h3>
+                    <span class="text-blue-600 dark:text-blue-500 font-bold text-5xl font-console leading-none" id="hud-contador-dicapi">${gravesDicapi}</span>
+                    <span class="text-gray-500 dark:text-gray-500 font-console text-[8px] uppercase mt-1">/ ${counts.dicapi.total} TOTALES</span>
+                </div>
+                
+                <div class="w-2/3 pl-3 text-right flex flex-col items-end justify-center relative z-10">
+                    <span class="border border-${topColor}-300 dark:border-${topColor}-800/50 text-${topColor}-600 dark:text-${topColor}-500 px-2 py-0.5 rounded text-[8px] font-console tracking-wider uppercase mb-1 flex items-center gap-1 shadow-sm bg-white/50 dark:bg-transparent">
+                        <span class="w-1.5 h-1.5 rounded-full bg-${topColor}-500 ${ultimoPuerto ? 'animate-pulse' : ''}"></span> ÚLTIMO REPORTE
+                    </span>
+                    <p class="text-gray-500 dark:text-gray-400 text-[9px] font-console line-clamp-1 mb-1" id="hud-last-time-dicapi"><i class="fa-regular fa-clock"></i> ${topFecha}</p>
+                    <h4 class="font-bold text-gray-800 dark:text-gray-200 text-[10px] leading-tight pr-2 uppercase line-clamp-2" id="hud-last-alert-dicapi">
+                        ${topNombre}<br>
+                        <span class="text-${topColor}-500 font-console">${topTxt}</span>
+                    </h4>
+                </div>
+            </div>
+
+            <div class="relative">
+                <i class="fa-solid fa-crosshairs absolute left-3 top-2.5 text-gray-400 dark:text-gray-500 text-sm"></i>
+                <input type="text" id="buscador-dicapi" onkeyup="filtrarRadarDicapi(this.value)" 
+                       class="w-full bg-gray-50 dark:bg-[#121212] border border-gray-300 dark:border-gray-700 text-gray-800 dark:text-gray-300 text-xs rounded-md focus:ring-blue-500 focus:border-blue-500 block pl-9 p-2 font-console placeholder-gray-400 dark:placeholder-gray-600 outline-none transition-colors" 
+                       placeholder="Interceptar: Puerto, Capitanía, Estado...">
+            </div>
+        </div>
+    </div>
+
+    <div id="lista-tarjetas-dicapi" class="pl-3 pr-1 flex flex-col gap-0 p-3 pb-10 px-0 mt-2">
+        ${tarjetasHtml}
+    </div>
+    `;
+
+    // ⚡ FIX FATAL: Generamos ambas variables para que su front-end no se quede ciego
+    htmlListaDicapi = headerHtml;
+    htmlListaPuertos = headerHtml;
+
+    // ACTUALIZACIÓN DE CONTADORES MAPA Y SIDEBAR
+    if(document.getElementById("dicapi-count")) document.getElementById("dicapi-count").innerText = gravesDicapi;
+    if(document.getElementById("dicapi-total")) document.getElementById("dicapi-total").innerText = counts.dicapi.total;
+    if(document.getElementById("hud-contador-dicapi")) document.getElementById("hud-contador-dicapi").innerText = gravesDicapi;
+    
+    // Clonación del último evento en el HUD del Mapa Principal
+    let wrapper = document.getElementById("hud-dicapi-last");
+    let badgeContainer = document.getElementById("hud-dicapi-badge");
+    if (wrapper && badgeContainer) {
+        badgeContainer.innerHTML = `<span class="bg-${topColor}-500/10 text-${topColor}-500 border border-${topColor}-500/30 px-1.5 py-[1px] rounded text-[9px] font-console uppercase tracking-widest flex items-center gap-1.5 dark:shadow-[0_0_5px_rgba(0,0,0,0.5)]"><div class="w-1.5 h-1.5 rounded-full bg-${topColor}-500 ${ultimoPuerto ? 'animate-pulse' : ''} shadow-[0_0_4px_currentColor]"></div> ${topTxt}</span>`;
+        
+        wrapper.innerHTML = `<span class="text-[9px] font-console text-gray-400 leading-none uppercase flex items-center justify-end gap-1 w-full"><i class="fa-regular fa-clock"></i> ${topFecha}</span>` +
+                            `<div class="w-full overflow-hidden text-[11px] font-bold text-gray-800 dark:text-gray-200 leading-tight mt-1.5 mb-0.5 uppercase text-right smart-marquee-box relative"><div class="smart-marquee-text whitespace-nowrap inline-block">${topNombre}</div></div>` +
+                            `<span class="truncate block text-[9.5px] text-gray-500 font-bold uppercase text-right w-full">${topSub}</span>`;
+        
+        setTimeout(() => { if (typeof activarMarqueesInteligentes === 'function') activarMarqueesInteligentes(); }, 100);
+    }
+
+    // ⚡ FIX FATAL: Actualización en vivo tolerante a fallos
+    let titleEl = document.getElementById("sidebar-title");
+    if (titleEl && titleEl.innerText === "ESTADO DE PUERTOS") {
+        let listCont = document.getElementById("lista-tarjetas-dicapi");
+        if (listCont) {
+            listCont.innerHTML = tarjetasHtml;
+        } else {
             document.getElementById("sidebar-content").innerHTML = htmlListaPuertos;
         }
     }
+}
 
+/**
+ * SONDA DE FILTRADO TÁCTICO - DICAPI
+ * Busca en los puertos y si encuentra, mantiene visible la Capitanía completa.
+ */
+window.filtrarRadarDicapi = function(termino) {
+    termino = termino.toLowerCase().trim();
+    const grupos = document.querySelectorAll('.dicapi-capitania-group');
+    
+    grupos.forEach(grupo => {
+        const tarjetas = grupo.querySelectorAll('.tarjeta-hud-dicapi');
+        let visiblesEnGrupo = 0;
+        
+        tarjetas.forEach(tarjeta => {
+            const dataSearch = tarjeta.getAttribute('data-search') || "";
+            if (dataSearch.includes(termino)) {
+                tarjeta.style.display = 'flex';
+                visiblesEnGrupo++;
+            } else {
+                tarjeta.style.display = 'none';
+            }
+        });
+        
+        // Ocultar o mostrar la capitanía entera
+        grupo.style.display = visiblesEnGrupo > 0 ? 'block' : 'none';
+    });
+};
+
+/**
+ * FUNCIÓN EXPANDER: Oculta/Muestra los puertos de una Capitanía
+ */
+window.toggleCapitania = function(idContenido, headerElement) {
+    const content = document.getElementById(idContenido);
+    const icon = headerElement.querySelector('.cap-arrow');
+    
+    // Como usamos Tailwind, el toggle es entre "flex" y "none"
+    if (content.style.display === 'none') {
+        content.style.display = 'flex';
+        icon.classList.remove('rotate-180');
+    } else {
+        content.style.display = 'none';
+        icon.classList.add('rotate-180');
+    }
+};
+
+// Variables Globales para el Minimapa DICAPI
+let miniMapDicapi = null;
+let miniMapMarkerDicapi = null;
+let miniMapLayerDicapi = null;
+
+/**
+ * ABRE EL MODAL DE CAPTURA - DICAPI
+ */
+window.abrirModalDicapi = function(event, dataStringUrlEncoded) {
+    event.stopPropagation();
+    
+    try {
+        const data = JSON.parse(decodeURIComponent(dataStringUrlEncoded));
+        
+        // Inyectamos datos de texto
+        document.getElementById('modal-dicapi-puerto').innerText = data.puerto;
+        document.getElementById('modal-dicapi-cap-val').innerText = data.cap;
+        document.getElementById('modal-dicapi-fecha').innerText = data.fecha;
+        document.getElementById('modal-dicapi-nivel').innerText = data.nivel;
+        document.getElementById('modal-dicapi-res').innerText = data.res || 'NO ESPECIFICADA';
+        document.getElementById('modal-dicapi-coords').innerText = `${data.lat || 0}, ${data.lng || 0}`;
+        
+        // Estado y color
+        const estadoEl = document.getElementById('modal-dicapi-estado-texto');
+        estadoEl.innerText = data.estado;
+        estadoEl.className = `text-lg font-bold font-console leading-none text-${data.color}-600 dark:text-${data.color}-500`;
+
+        // Badge dinámico
+        const badgeContainer = document.getElementById('modal-dicapi-badge-container');
+        if (badgeContainer) {
+            badgeContainer.innerHTML = `<span class="bg-${data.color}-100 dark:bg-${data.color}-900/30 text-${data.color}-600 dark:text-${data.color}-500 border border-${data.color}-300 dark:border-${data.color}-800 px-3 py-1.5 rounded-md text-[10px] font-bold tracking-wider uppercase flex items-center shadow-sm">ESTADO: ${data.estado}</span>`;
+        }
+
+        const modal = document.getElementById('modal-captura-dicapi');
+        modal.classList.remove('hidden');
+        
+        setTimeout(() => {
+            const transformEl = modal.querySelector('.transform');
+            if (transformEl) {
+                transformEl.classList.remove('scale-95');
+                transformEl.classList.add('scale-100');
+            }
+        }, 10);
+
+        modal.onclick = function(e) {
+            if (e.target === modal) cerrarModalDicapi();
+        };
+
+        // Renderizado del Minimapa DICAPI
+        setTimeout(() => {
+            const isDark = document.documentElement.classList.contains('dark');
+            const tileUrl = isDark 
+                ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' 
+                : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+            
+            if (!miniMapDicapi) {
+                miniMapDicapi = L.map('minimapa-dicapi', { zoomControl: false, attributionControl: false });
+            }
+            
+            miniMapDicapi.setView([data.lat, data.lng], 15);
+
+            if (!miniMapLayerDicapi) {
+                miniMapLayerDicapi = L.tileLayer(tileUrl, { attribution: '&copy; OpenStreetMap' }).addTo(miniMapDicapi);
+            } else {
+                miniMapLayerDicapi.setUrl(tileUrl);
+            }
+            
+            miniMapDicapi.invalidateSize();
+
+            if (miniMapMarkerDicapi) miniMapDicapi.removeLayer(miniMapMarkerDicapi);
+            
+            const customIcon = L.divIcon({
+                html: `<div class="w-8 h-8 rounded-full bg-${data.color}-500 flex items-center justify-center text-white dark:text-gray-900 border-2 border-white dark:border-[#121212] shadow-[0_0_15px_rgba(0,0,0,0.5)] dark:shadow-[0_0_15px_rgba(255,255,255,0.1)] animate-bounce"><i class="fa-solid ${data.icon} text-sm"></i></div>`,
+                className: '',
+                iconSize: [32, 32],
+                iconAnchor: [16, 32] 
+            });
+            
+            miniMapMarkerDicapi = L.marker([data.lat, data.lng], { icon: customIcon }).addTo(miniMapDicapi);
+
+        }, 250);
+
+    } catch (error) {
+        console.error("SAM: Error al parsear datos de DICAPI para el modal", error);
+    }
+};
+
+window.cerrarModalDicapi = function() {
+    const modal = document.getElementById('modal-captura-dicapi');
+    if (!modal) return;
+    
+    modal.onclick = null;
+    const transformEl = modal.querySelector('.transform');
+    
+    if (transformEl) {
+        transformEl.classList.remove('scale-100');
+        transformEl.classList.add('scale-95');
+    }
+    
+    setTimeout(() => { modal.classList.add('hidden'); }, 200);
+};
+    //////////////////////////////////////////////////////////////////
     // ================== 6. PROCESAR ALERTAS CECOM ==================
+    //////////////////////////////////////////////////////////////////
+
     let lastCecomMatched = null; // Guardamos para la tarjeta del HUD
     if(datos.cecom && datos.cecom.length > 0) {
       datos.cecom.sort(function(a, b) { 
@@ -1378,10 +1863,11 @@ window.cerrarModalBombero = function() {
       if(document.getElementById('hud-cecom-count')) document.getElementById('hud-cecom-count').innerText = '0';
     }
 
-    // Dibujar la leyenda (filtros) y pintar el mapa
-    globalCounts = counts; 
-    buildLayerPanel(counts);
+    // Dibujar marcadores iniciales en el mapa y encender contadores del Toolbar
     applyLayerFilters();
+    if (typeof actualizarContadoresToolbar === 'function') {
+        actualizarContadoresToolbar(counts); // <--- AHORA SÍ PASA LA VARIABLE
+    }
 
     // =========================================================================
     // INYECCIÓN DE TARJETAS DEL HUD INFERIOR (FORMATO SIMÉTRICO v4.0)
@@ -1411,10 +1897,11 @@ if(datos.sutran && datos.sutran.length > 0) {
        // Fecha formateada
        let dDate = `<span class="text-[9px] font-console text-gray-400 leading-none uppercase flex items-center justify-end gap-1 w-full"><i class="fa-regular fa-clock"></i> ${formatearFechaPeru(lastSutran.fechaHora_evento)}</span>`;
        let locSutran = (lastSutran.ubicación || '') + ' - ' + (lastSutran.evento || '');
-       let row3 = `<span class="truncate block text-[11px] font-bold text-gray-800 dark:text-gray-200 leading-tight mt-1.5 mb-0.5 uppercase text-right w-full" title="${locSutran}">${locSutran}</span>`;
+       let row3 = `<div class="w-full overflow-hidden text-[11px] font-bold text-gray-800 dark:text-gray-200 leading-tight mt-1.5 mb-0.5 uppercase text-right smart-marquee-box relative"><div class="smart-marquee-text whitespace-nowrap inline-block">${locSutran}</div></div>`;
        let row4 = genMarquee(lastSutran.evento || lastSutran.motivo || '-', 'text-gray-500 font-bold text-right');
        
        document.getElementById('hud-sutran-last').innerHTML = dDate + row3 + row4;
+       setTimeout(() => { if (typeof activarMarqueesInteligentes === 'function') activarMarqueesInteligentes(); }, 100);
    }
 }
 
@@ -1446,14 +1933,15 @@ if(datos.sutran && datos.sutran.length > 0) {
 
            let dDateB = `<span class="text-[9px] font-console text-gray-400 leading-none uppercase flex items-center justify-end gap-1 w-full"><i class="fa-regular fa-clock"></i> ${formatearFechaPeru(lastB['Fecha y Hora'])}</span>`;
            let locB = (lastB['Direccion'] || '-').replace(/</g, "&lt;").replace(/>/g, "&gt;");
-           let row3B = `<span class="truncate block text-[11px] font-bold text-gray-800 dark:text-gray-200 leading-tight mt-1.5 mb-0.5 uppercase text-right w-full" title="${locB}">${locB}</span>`;
+           let row3B = `<div class="w-full overflow-hidden text-[11px] font-bold text-gray-800 dark:text-gray-200 leading-tight mt-1.5 mb-0.5 uppercase text-right smart-marquee-box relative"><div class="smart-marquee-text whitespace-nowrap inline-block">${locB}</div></div>`;
            let row4B = genMarquee(tD, 'text-gray-500 font-bold text-right');
            
            document.getElementById('hud-cgbvp-last').innerHTML = dDateB + row3B + row4B;
+           setTimeout(() => { if (typeof activarMarqueesInteligentes === 'function') activarMarqueesInteligentes(); }, 100);
        }
     }
 
-    // HUD 3: IGP
+   // HUD 3: IGP (HUD Principal del Mapa)
     if(datos.igp && datos.igp.length > 0) {
        let lastIgp = datos.igp[0];
        let magVal = parseFloat(lastIgp['Magnitud']);
@@ -1461,23 +1949,30 @@ if(datos.sutran && datos.sutran.length > 0) {
        
        let elMag = document.getElementById('hud-igp-mag');
        if(elMag) {
-           elMag.innerText = lastIgp['Magnitud'] || '-.-';
+           elMag.innerText = !isNaN(magVal) ? magVal.toFixed(1) : '-.-';
            elMag.className = `text-[36px] font-bold font-console leading-none block text-${iCol}-500`; 
        }
+       // ⚡ Pintamos la "m" y la leyenda "Magnitud" con el nivel de alerta
+       if(document.getElementById('hud-igp-m')) document.getElementById('hud-igp-m').className = `text-[16px] font-bold font-console lowercase text-${iCol}-500`;
+       if(document.getElementById('hud-igp-legend')) document.getElementById('hud-igp-legend').className = `text-[9px] font-regular uppercase tracking-wide block mt-1 leading-none text-${iCol}-500`;
+
        if(document.getElementById('hud-igp-total')) document.getElementById('hud-igp-total').innerText = "/ " + counts.igp.total + " SISMOS";
        
        if(document.getElementById('hud-igp-last')) {
            let iEst = magVal >= 6.0 ? 'RIESGO ALTO' : (magVal >= 4.5 ? 'RIESGO MOD.' : 'RIESGO LEVE');
            
            let bBadgeI = `<span class="bg-${iCol}-500/10 text-${iCol}-500 border border-${iCol}-500/30 px-1.5 py-[1px] rounded text-[9px] font-console uppercase tracking-widest flex items-center gap-1.5 dark:shadow-[0_0_5px_rgba(0,0,0,0.5)]"><div class="w-1.5 h-1.5 rounded-full bg-${iCol}-500 animate-pulse shadow-[0_0_4px_currentColor]"></div> ${iEst}</span>`;
- if(document.getElementById('hud-igp-badge')) document.getElementById('hud-igp-badge').innerHTML = bBadgeI;
+           if(document.getElementById('hud-igp-badge')) document.getElementById('hud-igp-badge').innerHTML = bBadgeI;
 
            let dDateI = `<span class="text-[9px] font-console text-gray-400 leading-none uppercase flex items-center justify-end gap-1 w-full"><i class="fa-regular fa-clock"></i> ${formatearFechaPeru(lastIgp['Fecha y Hora'])}</span>`;
            let locI = lastIgp['Referencia'] || '-';
-           let row3I = `<span class="truncate block text-[11px] font-bold text-gray-800 dark:text-gray-200 leading-tight mt-1.5 mb-0.5 uppercase text-right w-full" title="${locI}">${locI}</span>`;
+           
+           // ⚡ Inyección del Marquee Sísmico
+           let row3I = `<div class="w-full overflow-hidden text-[11px] font-bold text-gray-800 dark:text-gray-200 leading-tight mt-1.5 mb-0.5 uppercase text-right smart-marquee-box relative"><div class="smart-marquee-text whitespace-nowrap inline-block">${locI}</div></div>`;
            let row4I = `<span class="truncate block text-[9.5px] text-gray-500 font-bold uppercase w-full text-right">INTENSIDAD: ${lastIgp['Intensidad'] || '-'}</span>`;
            
            document.getElementById('hud-igp-last').innerHTML = dDateI + row3I + row4I;
+           setTimeout(() => { if (typeof activarMarqueesInteligentes === 'function') activarMarqueesInteligentes(); }, 100);
        }
     }
 
@@ -1508,7 +2003,9 @@ if(datos.sutran && datos.sutran.length > 0) {
        }
     }
     applyLayerFilters();
-    applyDicapiFilters();
+    if (typeof actualizarContadoresToolbar === 'function') {
+        actualizarContadoresToolbar(counts); // <--- AHORA SÍ PASA LA VARIABLE
+    }
     isFirstLoad = false;
   }
 }
@@ -1521,21 +2018,30 @@ function openSidebar(modulo) {
   const contentEl = document.getElementById('sidebar-content');
 
   if (titleEl.innerHTML !== modulo) {
+    // ⚡ PROTOCOLO DE APAGADO: Si cambiamos de módulo, destruimos el video en curso
+    if (window.hlsPlayer) {
+        window.hlsPlayer.destroy();
+        window.hlsPlayer = null;
+    }
+
     titleEl.innerHTML = modulo;
+    
+    // ⚡ ENRUTADOR TÁCTICO INTEGRADO
     if (modulo === 'ALERTAS SUTRAN') contentEl.innerHTML = htmlListaSutran;
     else if (modulo === 'ALERTAS IGP') contentEl.innerHTML = htmlListaIgp;
     else if (modulo === 'ALERTAS CGBVP') contentEl.innerHTML = htmlListaBomberos;
     else if (modulo === 'ESTADO DE PUERTOS') contentEl.innerHTML = htmlListaPuertos;
     else if (modulo === 'ALERTAS SAM') contentEl.innerHTML = htmlListaCecom;
+    else if (modulo === 'LIVE CAMS') contentEl.innerHTML = htmlListaCCTV; // <-- Módulo CCTV Inyectado
     else contentEl.innerHTML = '<div class="text-center opacity-50 pt-20">Módulo en construcción</div>';
   }
+  
   sidebar.classList.remove('sidebar-closed');
   sidebar.classList.add('sidebar-open');
   overlay.classList.remove('hidden');
   forceMapRepaint();
 
-  // ⚡ NUEVO: Disparar la sonda después de la animación de apertura
-  // Usamos 300ms para asegurar que el panel ya se expandió y los anchos son reales
+  // Disparar la sonda después de la animación de apertura
   setTimeout(() => {
       if (typeof activarMarqueesInteligentes === 'function') {
           activarMarqueesInteligentes();
@@ -1546,9 +2052,19 @@ function openSidebar(modulo) {
 function closeSidebar() {
   const sidebar = document.getElementById('right-sidebar');
   const overlay = document.getElementById('sidebar-overlay');
+  
   sidebar.classList.add('sidebar-closed');
   sidebar.classList.remove('sidebar-open');
   overlay.classList.add('hidden');
+  
+  // ⚡ PROTOCOLO DE APAGADO: Cortar transmisión al cerrar el panel
+  let video = document.getElementById('cctv-player');
+  if (video) video.pause();
+  if (window.hlsPlayer) {
+      window.hlsPlayer.destroy();
+      window.hlsPlayer = null;
+  }
+
   forceMapRepaint();
 }
 
@@ -1558,487 +2074,313 @@ function toggleLayerPanel() {
   panel.classList.toggle('hidden');
 }
 
-function buildLayerPanel(counts) {
-      const content = document.getElementById('layer-content');
-      
-      // Inteligencia Táctica: Si hay al menos un hijo activo, el Padre se marca automáticamente
-      let chkCctv = layerState['LIVE_CAMS']; // <-- NUEVO
-      let chkSutran = layerState['SUTRAN_INTERRUMPIDO'] || layerState['SUTRAN_RESTRINGIDO'] || layerState['SUTRAN_NORMAL'];
-      let chkCgbvp = layerState['CGBVP_INCENDIO'] || layerState['CGBVP_MATPEL'] || layerState['CGBVP_ACCVEH'] || layerState['CGBVP_EMERGMED'] || layerState['CGBVP_RESCATE'] || layerState['CGBVP_SERVESP'] || layerState['CGBVP_CERRADO'];
-      let chkIgp = layerState['IGP_ALTO'] || layerState['IGP_MODERADO'] || layerState['IGP_LEVE'];
-      let chkDicapi = layerState['DICAPI_ROJO'] || layerState['DICAPI_AMBAR'] || layerState['DICAPI_VERDE'];
-      let chkCecom = layerState['CECOM_ALTO'] || layerState['CECOM_MEDIO'];
-
-      content.innerHTML = `
-        <div class="space-y-4">
-            
-            <div>
-               <div>
-               <div class="font-bold text-cyan-600 dark:text-cyan-400 text-[10px] uppercase mb-1.5 border-b border-gray-200 dark:border-neutral-700 pb-1 flex justify-between items-center">
-                  <label class="flex items-center gap-1.5 cursor-pointer hover:text-cyan-500 transition-colors m-0">
-                      <input type="checkbox" id="group-CCTV" onchange="toggleLayer('LIVE_CAMS')" ${chkCctv ? 'checked' : ''} class="accent-cyan-500">
-                      <span><i class="fa-solid fa-video mr-1"></i> Intercepción CCTV</span>
-                  </label>
-                  <span class="bg-gray-200 dark:bg-neutral-800 px-1.5 rounded font-console">${dataCCTVGlobal.length}</span>
-               </div>
-            </div>
-
-               <div class="font-bold text-gray-800 dark:text-gray-200 text-[10px] uppercase mb-1.5 border-b border-gray-200 dark:border-neutral-700 pb-1 flex justify-between items-center">
-                  <label class="flex items-center gap-1.5 cursor-pointer hover:text-orange-500 transition-colors m-0">
-                      <input type="checkbox" id="group-SUTRAN" onchange="toggleGroup('SUTRAN')" ${chkSutran ? 'checked' : ''} class="accent-orange-500">
-                      <span>Alertas SUTRAN</span>
-                  </label>
-                  <span class="bg-gray-200 dark:bg-neutral-800 px-1.5 rounded">${counts.sutran.total}</span>
-               </div>
-               <div class="space-y-1.5 pl-5">
-                  <label class="flex items-center gap-1.5 text-[9px] text-gray-600 dark:text-gray-400 cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors font-console uppercase">
-                     <input type="checkbox" onchange="toggleLayer('SUTRAN_INTERRUMPIDO')" ${layerState['SUTRAN_INTERRUMPIDO']?'checked':''} class="accent-red-500">
-                     <span class="w-1.5 h-1.5 rounded-full bg-red-500 inline-block"></span> Interrumpido (${counts.sutran.interrumpido})
-                  </label>
-                  <label class="flex items-center gap-1.5 text-[9px] text-gray-600 dark:text-gray-400 cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors font-console uppercase">
-                     <input type="checkbox" onchange="toggleLayer('SUTRAN_RESTRINGIDO')" ${layerState['SUTRAN_RESTRINGIDO']?'checked':''} class="accent-yellow-500">
-                     <span class="w-1.5 h-1.5 rounded-full bg-yellow-500 inline-block"></span> Restringido (${counts.sutran.restringido})
-                  </label>
-                  <label class="flex items-center gap-1.5 text-[9px] text-gray-600 dark:text-gray-400 cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors font-console uppercase">
-                     <input type="checkbox" onchange="toggleLayer('SUTRAN_NORMAL')" ${layerState['SUTRAN_NORMAL']?'checked':''} class="accent-green-500">
-                     <span class="w-1.5 h-1.5 rounded-full bg-green-500 inline-block"></span> Normal (${counts.sutran.normal})
-                  </label>
-               </div>
-            </div>
-
-            <div>
-               <div class="font-bold text-gray-800 dark:text-gray-200 text-[10px] uppercase mb-1.5 border-b border-gray-200 dark:border-neutral-700 pb-1 flex justify-between items-center">
-                  <label class="flex items-center gap-1.5 cursor-pointer hover:text-red-500 transition-colors m-0">
-                      <input type="checkbox" id="group-CGBVP" onchange="toggleGroup('CGBVP')" ${chkCgbvp ? 'checked' : ''} class="accent-red-500">
-                      <span>Alertas CGBVP</span>
-                  </label>
-                  <span class="bg-gray-200 dark:bg-neutral-800 px-1.5 rounded">${counts.cgbvp.total}</span>
-               </div>
-               <div class="space-y-1.5 pl-5">
-                  <label class="flex items-center gap-1.5 text-[9px] text-gray-600 dark:text-gray-400 cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors font-console uppercase">
-                     <input type="checkbox" onchange="toggleLayer('CGBVP_INCENDIO')" ${layerState['CGBVP_INCENDIO']?'checked':''} class="accent-red-500">
-                     <span class="w-1.5 h-1.5 rounded-full bg-red-500 inline-block"></span> Incendio (${counts.cgbvp.incendio})
-                  </label>
-                  <label class="flex items-center gap-1.5 text-[9px] text-gray-600 dark:text-gray-400 cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors font-console uppercase">
-                     <input type="checkbox" onchange="toggleLayer('CGBVP_MATPEL')" ${layerState['CGBVP_MATPEL']?'checked':''} class="accent-red-500">
-                     <span class="w-1.5 h-1.5 rounded-full bg-red-500 inline-block"></span> Mat. Peligrosos (${counts.cgbvp.matpel})
-                  </label>
-                  <label class="flex items-center gap-1.5 text-[9px] text-gray-600 dark:text-gray-400 cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors font-console uppercase">
-                     <input type="checkbox" onchange="toggleLayer('CGBVP_ACCVEH')" ${layerState['CGBVP_ACCVEH']?'checked':''} class="accent-red-500">
-                     <span class="w-1.5 h-1.5 rounded-full bg-red-500 inline-block"></span> Acc. Vehicular (${counts.cgbvp.accveh})
-                  </label>
-                  <label class="flex items-center gap-1.5 text-[9px] text-gray-600 dark:text-gray-400 cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors font-console uppercase">
-                     <input type="checkbox" onchange="toggleLayer('CGBVP_EMERGMED')" ${layerState['CGBVP_EMERGMED']?'checked':''} class="accent-amber-500">
-                     <span class="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block"></span> Emerg. Médica (${counts.cgbvp.emergmed})
-                  </label>
-                  <label class="flex items-center gap-1.5 text-[9px] text-gray-600 dark:text-gray-400 cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors font-console uppercase">
-                     <input type="checkbox" onchange="toggleLayer('CGBVP_RESCATE')" ${layerState['CGBVP_RESCATE']?'checked':''} class="accent-amber-500">
-                     <span class="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block"></span> Rescate (${counts.cgbvp.rescate})
-                  </label>
-                  <label class="flex items-center gap-1.5 text-[9px] text-gray-600 dark:text-gray-400 cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors font-console uppercase">
-                     <input type="checkbox" onchange="toggleLayer('CGBVP_SERVESP')" ${layerState['CGBVP_SERVESP']?'checked':''} class="accent-amber-500">
-                     <span class="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block"></span> Serv. Especial (${counts.cgbvp.servesp})
-                  </label>
-                  <label class="flex items-center gap-1.5 text-[9px] text-gray-600 dark:text-gray-400 cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors font-console uppercase">
-                     <input type="checkbox" onchange="toggleLayer('CGBVP_CERRADO')" ${layerState['CGBVP_CERRADO']?'checked':''} class="accent-green-500">
-                     <span class="w-1.5 h-1.5 rounded-full bg-green-500 inline-block"></span> Cerrados (${counts.cgbvp.cerrado})
-                  </label>
-               </div>
-            </div>
-
-            <div>
-               <div class="font-bold text-gray-800 dark:text-gray-200 text-[10px] uppercase mb-1.5 border-b border-gray-200 dark:border-neutral-700 pb-1 flex justify-between items-center">
-                  <label class="flex items-center gap-1.5 cursor-pointer hover:text-amber-500 transition-colors m-0">
-                      <input type="checkbox" id="group-IGP" onchange="toggleGroup('IGP')" ${chkIgp ? 'checked' : ''} class="accent-amber-500">
-                      <span>Alertas IGP</span>
-                  </label>
-                  <span class="bg-gray-200 dark:bg-neutral-800 px-1.5 rounded">${counts.igp.total}</span>
-               </div>
-               <div class="space-y-1.5 pl-5">
-                  <label class="flex items-center gap-1.5 text-[9px] text-gray-600 dark:text-gray-400 cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors font-console uppercase">
-                     <input type="checkbox" onchange="toggleLayer('IGP_ALTO')" ${layerState['IGP_ALTO']?'checked':''} class="accent-red-500">
-                     <span class="w-1.5 h-1.5 rounded-full bg-red-500 inline-block"></span> Riesgo Alto (${counts.igp.alto})
-                  </label>
-                  <label class="flex items-center gap-1.5 text-[9px] text-gray-600 dark:text-gray-400 cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors font-console uppercase">
-                     <input type="checkbox" onchange="toggleLayer('IGP_MODERADO')" ${layerState['IGP_MODERADO']?'checked':''} class="accent-amber-500">
-                     <span class="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block"></span> Riesgo Mod. (${counts.igp.moderado})
-                  </label>
-                  <label class="flex items-center gap-1.5 text-[9px] text-gray-600 dark:text-gray-400 cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors font-console uppercase">
-                     <input type="checkbox" onchange="toggleLayer('IGP_LEVE')" ${layerState['IGP_LEVE']?'checked':''} class="accent-green-500">
-                     <span class="w-1.5 h-1.5 rounded-full bg-green-500 inline-block"></span> Riesgo Leve (${counts.igp.leve})
-                  </label>
-               </div>
-            </div>
-
-            <div>
-               <div class="font-bold text-gray-800 dark:text-gray-200 text-[10px] uppercase mb-1.5 border-b border-gray-200 dark:border-neutral-700 pb-1 flex justify-between items-center">
-                  <label class="flex items-center gap-1.5 cursor-pointer hover:text-blue-500 transition-colors m-0">
-                      <input type="checkbox" id="group-DICAPI" onchange="toggleGroup('DICAPI')" ${chkDicapi ? 'checked' : ''} class="accent-blue-500">
-                      <span>Estado de Puertos</span>
-                  </label>
-                  <span class="bg-gray-200 dark:bg-neutral-800 px-1.5 rounded">${globalDicapiCounts.total}</span>
-               </div>
-               <div class="space-y-1.5 pl-5">
-                  <label class="flex items-center gap-1.5 text-[9px] text-gray-600 dark:text-gray-400 cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors font-console uppercase">
-                     <input type="checkbox" onchange="toggleLayer('DICAPI_ROJO')" ${layerState['DICAPI_ROJO']?'checked':''} class="accent-red-500">
-                     <span class="w-1.5 h-1.5 rounded-full bg-red-500 inline-block"></span> Cierre Total (${globalDicapiCounts.rojo})
-                  </label>
-                  <label class="flex items-center gap-1.5 text-[9px] text-gray-600 dark:text-gray-400 cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors font-console uppercase">
-                     <input type="checkbox" onchange="toggleLayer('DICAPI_AMBAR')" ${layerState['DICAPI_AMBAR']?'checked':''} class="accent-amber-500">
-                     <span class="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block"></span> Cierre Parcial (${globalDicapiCounts.ambar})
-                  </label>
-                  <label class="flex items-center gap-1.5 text-[9px] text-gray-600 dark:text-gray-400 cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors font-console uppercase">
-                     <input type="checkbox" onchange="toggleLayer('DICAPI_VERDE')" ${layerState['DICAPI_VERDE']?'checked':''} class="accent-green-500">
-                     <span class="w-1.5 h-1.5 rounded-full bg-green-500 inline-block"></span> Abiertos (${globalDicapiCounts.verde})
-                  </label>
-               </div>
-            </div>
-
-            <div>
-               <div class="font-bold text-gray-800 dark:text-gray-200 text-[10px] uppercase mb-1.5 border-b border-gray-200 dark:border-neutral-700 pb-1 flex justify-between items-center">
-                  <label class="flex items-center gap-1.5 cursor-pointer hover:text-blue-500 transition-colors m-0">
-                      <input type="checkbox" id="group-CECOM" onchange="toggleGroup('CECOM')" ${chkCecom ? 'checked' : ''} class="accent-blue-500">
-                      <span>Alertas SAM</span>
-                  </label>
-                  <span class="bg-gray-200 dark:bg-neutral-800 px-1.5 rounded">${counts.cecom ? counts.cecom.total : 0}</span>
-               </div>
-               <div class="space-y-1.5 pl-5">
-                  <label class="flex items-center gap-1.5 text-[9px] text-gray-600 dark:text-gray-400 cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors font-console uppercase">
-                     <input type="checkbox" onchange="toggleLayer('CECOM_ALTO')" ${layerState['CECOM_ALTO']?'checked':''} class="accent-red-500">
-                     <span class="w-1.5 h-1.5 rounded-full bg-red-500 inline-block animate-pulse shadow-[0_0_5px_rgba(239,68,68,0.8)]"></span> Riesgo Alto (${counts.cecom ? counts.cecom.alto : 0})
-                  </label>
-                  <label class="flex items-center gap-1.5 text-[9px] text-gray-600 dark:text-gray-400 cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors font-console uppercase">
-                     <input type="checkbox" onchange="toggleLayer('CECOM_MEDIO')" ${layerState['CECOM_MEDIO']?'checked':''} class="accent-yellow-500">
-                     <span class="w-1.5 h-1.5 rounded-full bg-yellow-500 inline-block animate-pulse shadow-[0_0_5px_rgba(234,179,8,0.8)]"></span> Riesgo Medio (${counts.cecom ? counts.cecom.medio : 0})
-                  </label>
-               </div>
-            </div>           
-            
-            <div>
-               <div class="font-bold text-gray-800 dark:text-gray-200 text-[10px] uppercase mb-1.5 border-b border-gray-200 dark:border-neutral-700 pb-1 flex justify-between mt-2">
-                  <span class="text-purple-500"><i class="fa-solid fa-radar"></i> Capas Analíticas</span>
-               </div>
-               <div class="space-y-1.5 pl-1">
-                  <label class="flex items-center gap-1.5 text-[9px] text-gray-600 dark:text-gray-400 cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors font-console uppercase">
-                     <input type="checkbox" onchange="toggleLayer('HEATMAP')" ${layerState['HEATMAP']?'checked':''} class="accent-purple-500">
-                     <i class="fa-solid fa-fire-flame-curved text-purple-500"></i> Densidad de Calor
-                  </label>
-                  
-                  <label class="flex items-center gap-1.5 text-[9px] text-gray-600 dark:text-gray-400 cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors font-console uppercase mt-1">
-                     <input type="checkbox" onchange="toggleWindLayer()" ${layerState['WIND_FLOW']?'checked':''} class="accent-cyan-400">
-                     <i class="fa-solid fa-wind text-cyan-400"></i> Flujo de Viento (GFS)
-                  </label>
-               </div>
-            </div>
-
-            <div>
-               <div class="font-bold text-gray-800 dark:text-gray-200 text-[10px] uppercase mb-1.5 border-b border-gray-200 dark:border-neutral-700 pb-1 flex justify-between items-center">
-                  <label class="flex items-center gap-1.5 cursor-pointer hover:text-blue-500 transition-colors m-0">
-                      <input type="checkbox" onchange="toggleLayer('SEDES')" ${layerState['SEDES']?'checked':''} class="accent-blue-500">
-                      <span>Instalaciones Propias</span>
-                  </label>
-                  <span class="bg-gray-200 dark:bg-neutral-800 px-1.5 rounded">${counts.sedes.total}</span>
-               </div>
-            </div>
-
-        </div>
-      `;
-  }
-
-function toggleLayer(layerId) {
-  layerState[layerId] = !layerState[layerId];
-  if (layerId === 'LIVE_CAMS') {
-    if (layerState['LIVE_CAMS']) map.addLayer(layerCCTV);
-    else map.removeLayer(layerCCTV);
-  }
-  applyLayerFilters();
-  if (globalCounts) buildLayerPanel(globalCounts);
-}
-
-function quickToggleGroup(group) {
-      let currentState = false;
-      
-      // Comprobamos si el grupo está activo
-      if (group === 'LIVE_CAMS' || group === 'SEDES') {
-          currentState = layerState[group];
-      } else {
-          for (let key in layerState) {
-              if (key.startsWith(group + '_') && layerState[key] === true) {
-                  currentState = true; break;
-              }
-          }
-      }
-      
-      let targetState = !currentState; 
-
-      // Aplicamos el nuevo estado
-      if (group === 'LIVE_CAMS' || group === 'SEDES') {
-          layerState[group] = targetState;
-          if (group === 'LIVE_CAMS') {
-              if (targetState) map.addLayer(layerCCTV);
-              else map.removeLayer(layerCCTV);
-          }
-      } else {
-          for (let key in layerState) {
-              if (key.startsWith(group + '_')) layerState[key] = targetState;
-          }
-      }
-
-      applyLayerFilters();
-      applyDicapiFilters();
-      if (globalCounts) buildLayerPanel(globalCounts); 
-  }
-
-function applyLayerFilters() {
-  markerGroup.clearLayers();
-  if (heatLayer) { map.removeLayer(heatLayer); heatLayer = null; }
-
-  let heatPoints = [];
-
-  allMarkers.forEach(item => {
-    if (layerState[item.layerId]) {
-      item.marker.addTo(markerGroup);
-
-      // Recolectar puntos de calor (excepto sedes)
-      if (layerState['HEATMAP'] && item.layerId !== 'SEDES') {
-        const latlng = item.marker.getLatLng();
-        heatPoints.push([latlng.lat, latlng.lng, 1]);
-      }
-    }
-  });
-
-  // Dibujar heatmap si es necesario
-  if (layerState['HEATMAP'] && heatPoints.length > 0) {
-    heatLayer = L.heatLayer(heatPoints, {
-      radius: 20,
-      blur: 25,
-      maxZoom: 10,
-      gradient: { 0.3: '#3b82f6', 0.5: '#22c55e', 0.7: '#eab308', 1.0: '#ef4444' }
-    }).addTo(map);
-  }
-}
-
-function applyDicapiFilters() {
-  const estadoKeys = {
-    'DICAPI_ROJO': layerState['DICAPI_ROJO'],
-    'DICAPI_AMBAR': layerState['DICAPI_AMBAR'],
-    'DICAPI_VERDE': layerState['DICAPI_VERDE']
-  };
-
-  allMarkers.forEach(item => {
-    if (item.layerId.startsWith('DICAPI_')) {
-      const show = estadoKeys[item.layerId] === true;
-      if (show) {
-        if (!markerGroup.hasLayer(item.marker)) item.marker.addTo(markerGroup);
-      } else {
-        if (markerGroup.hasLayer(item.marker)) markerGroup.removeLayer(item.marker);
-      }
-    }
-  });
-}
-
-function syncQuickButtons() {
-  const groups = ['LIVE_CAMS', 'SEDES', 'SUTRAN', 'CGBVP', 'DICAPI', 'IGP', 'CECOM', 'HEATMAP', 'WIND_FLOW'];
-  groups.forEach(g => {
-    const btn = document.getElementById('btn-quick-' + g);
-    if (!btn) return;
-    const isActive = (g === 'LIVE_CAMS' || g === 'SEDES' || g === 'HEATMAP' || g === 'WIND_FLOW')
-      ? layerState[g]
-      : Object.keys(layerState).some(k => k.startsWith(g + '_') && layerState[k]);
-    btn.classList.toggle('opacity-30', !isActive);
-    btn.classList.toggle('grayscale', !isActive);
-  });
-}
-
 /* ==========================================================
-     MÓDULO CCTV: HUD INTEGRADO Y CONTROL DE MAPA (FASE 2)
-     ========================================================== */
-  let hlsPlayer = null;
-  let layerCCTV = L.layerGroup(); // Capa independiente para el mapa
-  let dataCCTVGlobal = []; // Memoria táctica de cámaras
+   MÓDULO CCTV: FUSIÓN CON SIDEBAR PRINCIPAL
+   ========================================================== */
+window.hlsPlayer = null; // Hecho global para poder destruirlo fácilmente
+let layerCCTV = L.layerGroup();
+let dataCCTVGlobal = [];
+let htmlListaCCTV = ''; // ⚡ Variable global estandarizada (Igual que htmlListaBomberos)
 
-  // 1. CONTROL DEL PANEL LATERAL
-  function openCCTVSidebar() {
-      closeSidebar(); // Cierra el panel normal si estaba abierto
-      document.getElementById('sidebar-cctv').classList.remove('translate-x-full');
-      document.getElementById('sidebar-overlay').classList.remove('hidden');
-  }
-
-  function closeCCTVSidebar() {
-      document.getElementById('sidebar-cctv').classList.add('translate-x-full');
-      document.getElementById('sidebar-overlay').classList.add('hidden');
-      
-      // Apagar video al cerrar para ahorrar ancho de banda
-      let video = document.getElementById('cctv-player');
-      video.pause();
-      if(hlsPlayer) {
-          hlsPlayer.destroy();
-          hlsPlayer = null;
-      }
-      document.getElementById('cctv-player').classList.add('hidden');
-      document.getElementById('cctv-placeholder').classList.remove('hidden');
-      document.getElementById('cctv-placeholder').innerText = "ESPERANDO SELECTOR DE TRANSMISIÓN...";
-      document.getElementById('cctv-ubicacion').innerText = "STANDBY";
-      document.getElementById('cctv-distrito').innerText = "SISTEMA EN ESPERA";
-  }
-
-  // 2. CARGAR CÁMARAS DESDE SHEETS
-  async function cargarCamarasLive() {
-  try {
-    const res = await ApiClient.request('/api/v1/sam/camaras');
-    const camaras = res.data;
-
-    // Limpiar capa de CCTV previa
-    layerCCTV.clearLayers();
-
-    // Construir la lista lateral (sidebar)
-    const listContainer = document.getElementById('cctv-list');
-    if (!listContainer) return;
-    listContainer.innerHTML = '';
-
-    if (!camaras || camaras.length === 0) {
-      listContainer.innerHTML =
-        '<div class="text-center text-gray-500 font-console text-xs mt-10">NO SE DETECTARON CÁMARAS ACTIVAS</div>';
-      return;
-    }
-
-    // Variable para almacenar globalmente
-    dataCCTVGlobal = camaras;
-
-    // Procesar cada cámara
-    camaras.forEach((cam, index) => {
-      // Crear el elemento en la lista lateral
-      const itemId = 'cam-item-' + index;
-      const card = document.createElement('div');
-      card.id = itemId;
-      card.className =
-        'cursor-pointer hover:bg-cyan-500/10 border border-gray-700 rounded p-2 mb-1 transition-colors';
-      card.innerHTML = `
-        <p class="text-cyan-400 font-bold text-xs uppercase">${cam.ubicacion}</p>
-        <p class="text-gray-400 text-[10px]">${cam.distrito}</p>
-      `;
-      card.addEventListener('click', () => seleccionarCamaraEnPanel(index));
-      listContainer.appendChild(card);
-
-      // Si hay coordenadas, dibujar marcador en el mapa
-      if (cam.lat && cam.lng) {
-        const iconCCTV = L.divIcon({
-          html: `<div class="w-5 h-5 rounded-full bg-cyan-500 icon-marker marker-rumble flex items-center justify-center text-white dark:text-gray-900 shadow-[0_0_8px_rgba(6,182,212,0.6)]">
-                  <i class="fa-solid fa-video text-[10px]"></i>
-                </div>`,
-          className: '',
-          iconSize: [20, 20],
-          iconAnchor: [10, 10]
-        });
-
-        const marker = L.marker([parseFloat(cam.lat), parseFloat(cam.lng)], {
-          icon: iconCCTV,
-          zIndexOffset: 700
-        }).addTo(layerCCTV);
-
-        marker.bindTooltip(
-          `<b class="font-sans text-[10px] uppercase text-cyan-500">${cam.ubicacion}</b><br>
-           <span class="text-[9px] dark:text-gray-300">INTERCEPTAR SEÑAL CCTV</span>`,
-          { className: 'custom-tooltip' }
-        );
-
-        marker.on('click', () => {
-          abrirMatrixNuevaPestana();
-        });
-      }
+// 1. SONDA DE FILTRADO TÁCTICO CCTV
+window.filtrarRadarCCTV = function(termino) {
+    termino = termino.toLowerCase().trim();
+    const tarjetas = document.querySelectorAll('.tarjeta-hud-cctv');
+    tarjetas.forEach(tarjeta => {
+        const dataSearch = tarjeta.getAttribute('data-search') || "";
+        if (dataSearch.includes(termino)) {
+            tarjeta.style.display = 'flex';
+        } else {
+            tarjeta.style.display = 'none';
+        }
     });
+};
 
-    // Respetar el estado de la capa (si está activa, añadirla al mapa)
-    if (layerState['LIVE_CAMS']) {
-      map.addLayer(layerCCTV);
-    }
+// 2. CARGAR CÁMARAS Y CONSTRUIR HTML DINÁMICO
+async function cargarCamarasLive() {
+    try {
+        const res = await ApiClient.request('/api/v1/sam/camaras');
+        const camaras = res.data;
 
-    // Actualizar leyenda si existe
-    if (typeof globalCounts !== 'undefined' && typeof buildLayerPanel === 'function') {
-      buildLayerPanel(globalCounts);
+        layerCCTV.clearLayers();
+        
+        if (!camaras || camaras.length === 0) {
+            htmlListaCCTV = '<div class="text-center text-gray-500 font-console text-xs mt-10">NO SE DETECTARON CÁMARAS ACTIVAS</div>';
+            return;
+        }
+
+        dataCCTVGlobal = camaras;
+        let tarjetasHtml = '';
+
+        const hoy = new Date();
+        const dia = String(hoy.getDate()).padStart(2, '0');
+        const mes = String(hoy.getMonth() + 1).padStart(2, '0');
+        const anio = hoy.getFullYear();
+        const fechaSimulada = `${dia}/${mes}/${anio} 12:00:00`;
+
+        camaras.forEach((cam, index) => {
+            let pUbicacion = cam.ubicacion || 'SIN UBICACIÓN';
+            let pDistrito = cam.distrito || 'SIN DISTRITO';
+            let pProveedor = cam.proveedor || 'DESCONOCIDO';
+            let pId = cam.idCamara || `CAM-${index}`;
+            let pEstado = (cam.estado || 'ACTIVO').toUpperCase();
+            let lat = parseFloat(cam.latitud || cam.lat || 0);
+            let lng = parseFloat(cam.longitud || cam.lng || 0);
+
+            let colorTailwind = pEstado === 'ACTIVO' ? 'cyan' : 'gray';
+            let pulseBadge = pEstado === 'ACTIVO' ? `<span class="w-1.5 h-1.5 rounded-full bg-cyan-500 animate-pulse shadow-[0_0_4px_currentColor]"></span>` : '';
+            let badgeEstado = `<span class="bg-transparent border border-${colorTailwind}-800/80 text-${colorTailwind}-600 dark:text-${colorTailwind}-500 px-1.5 py-0.5 rounded text-[8px] font-console tracking-wider uppercase flex items-center gap-1 shadow-sm">${pulseBadge}${pEstado}</span>`;
+            
+            let dataSearchStr = `${pUbicacion} ${pDistrito} ${pProveedor} ${pId} ${pEstado}`.toLowerCase();
+            const itemId = 'cam-item-' + index;
+
+            // ⚡ NUEVO DISEÑO ALINEADO A LA DERECHA + BLINDAJE DE SCROLL (scroll-margin-top)
+            tarjetasHtml += `
+            <div id="${itemId}" style="scroll-margin-top: 340px;" class="tarjeta-hud-cctv bg-white dark:bg-[#121212] border border-gray-200 dark:border-gray-800 rounded-lg hover:border-${colorTailwind}-400 dark:hover:border-${colorTailwind}-500/50 transition-colors shadow-sm relative flex flex-col overflow-hidden group cursor-pointer p-2.5 shrink-0 min-h-[85px]"
+                 data-search="${dataSearchStr}" onclick="seleccionarCamara(${index}, false)">
+                
+                <i class="fa-solid fa-video text-${colorTailwind}-500/10 absolute -bottom-3 -left-4 text-[6rem] z-0 pointer-events-none"></i>
+                
+                <div class="flex justify-between items-start w-full relative z-10 mb-1 gap-2">
+                    <span class="text-${colorTailwind}-600 dark:text-${colorTailwind}-500 font-bold text-[9px] uppercase tracking-widest mt-0.5">${pProveedor}</span>
+                    <div class="shrink-0">${badgeEstado}</div>
+                </div>
+
+                <div class="flex flex-col items-end text-right w-full pl-6 relative z-10 space-y-1 mt-auto">
+                    
+                    <div class="flex items-center gap-1 text-[8px] text-gray-500 dark:text-gray-400 font-console">
+                        <i class="fa-regular fa-clock"></i> <span>${fechaSimulada}</span>
+                    </div>
+
+                    <div class="w-full overflow-hidden text-[11px] font-bold text-gray-800 dark:text-gray-200 leading-tight uppercase text-right smart-marquee-box relative">
+                        <div class="smart-marquee-text whitespace-nowrap inline-block">${pUbicacion}</div>
+                    </div>
+
+                    <p class="text-gray-600 dark:text-gray-400 text-[9px] font-bold uppercase">
+                        ${pDistrito} <span class="mx-1 text-gray-300 dark:text-gray-700">|</span> <span class="font-console text-gray-500">ID: ${pId}</span>
+                    </p>
+                </div>
+            </div>
+            `;
+
+            // Marcadores de Mapa (Minimalistas)
+            if (!isNaN(lat) && !isNaN(lng) && lat !== 0) {
+                let opacidad = pEstado === 'ACTIVO' ? '1' : '0.5';
+                // ⚡ CCTV: Punto de 10px limpio, sin shadow
+                const iconCCTV = L.divIcon({
+                    html: `<div class="w-2.5 h-2.5 rounded-full bg-${colorTailwind}-500 border border-white dark:border-[#121212]" style="opacity: ${opacidad}"></div>`,
+                    className: '', iconSize: [10, 10], iconAnchor: [5, 5]
+                });
+
+                const marker = L.marker([lat, lng], { icon: iconCCTV, zIndexOffset: 700 });
+                marker.bindTooltip(`<b class="font-sans text-[10px] uppercase text-${colorTailwind}-500"><i class="fa-solid fa-video"></i> ${pUbicacion}</b><br><span class="text-[9px] dark:text-gray-300">Estado: ${pEstado}</span>`, { className: 'custom-tooltip', direction: 'top', offset: [0, -6] });
+                marker.on('click', () => { seleccionarCamara(index, true); });
+                marker.addTo(layerCCTV);
+            }
+        });
+
+        // CONSTRUCCIÓN DE LA CABECERA HUD DEL SIDEBAR (Con Reproductor)
+        htmlListaCCTV = `
+        <div class="sticky top-0 bg-white dark:bg-[#0a0a0a] z-[100] w-full pt-3 pb-2 border-b border-gray-200 dark:border-gray-800 shadow-[0_5px_15px_rgba(0,0,0,0.05)] dark:shadow-[0_10px_20px_rgba(0,0,0,0.8)] px-0 transition-colors">
+            <div class="px-3">
+                
+                <div class="bg-cyan-50 dark:bg-[#161a1a] border border-cyan-200 dark:border-cyan-900/30 rounded-lg p-2.5 mb-2 relative overflow-hidden flex flex-col shadow-sm dark:shadow-lg transition-colors">
+                    <div class="flex justify-between items-start mb-1.5 z-10">
+                        <span class="border border-cyan-300 dark:border-cyan-800/50 text-cyan-600 dark:text-cyan-500 px-2 py-0.5 rounded text-[8px] font-console tracking-wider uppercase flex items-center gap-1 shadow-sm bg-white/50 dark:bg-transparent">
+                            <span class="w-1.5 h-1.5 rounded-full bg-cyan-500" id="cctv-pulse-dot"></span> TRANSMISIÓN EN VIVO
+                        </span>
+                        <span class="text-gray-500 dark:text-gray-400 text-[9px] font-console uppercase font-bold" id="cctv-proveedor-header">PROVEEDOR</span>
+                    </div>
+
+                    <div class="w-full overflow-hidden text-[11px] font-bold text-gray-800 dark:text-gray-200 leading-tight uppercase mt-0.5 smart-marquee-box relative z-10">
+                        <div class="smart-marquee-text whitespace-nowrap inline-block" id="cctv-ubicacion">STANDBY</div>
+                    </div>
+                    <span class="text-gray-500 dark:text-gray-400 font-console text-[9px] uppercase mt-0.5 mb-2 z-10" id="cctv-distrito">SISTEMA EN ESPERA</span>
+
+                    <div class="w-full bg-black rounded overflow-hidden border border-gray-300 dark:border-gray-800 relative shadow-inner group z-10" style="aspect-ratio: 16/9;">
+                        <div id="cctv-loader" class="absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-20 hidden">
+                            <i class="fa-solid fa-circle-notch fa-spin text-cyan-500 text-2xl mb-2"></i>
+                            <span class="text-cyan-500 text-[9px] font-console tracking-widest mt-2">ENLAZANDO SEÑAL...</span>
+                        </div>
+                        <div id="cctv-placeholder" class="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-[#0a0a0a] z-10 text-[9px] font-console text-gray-500 tracking-widest text-center px-4">
+                            ESPERANDO SELECTOR DE TRANSMISIÓN...
+                        </div>
+                        <video id="cctv-player" class="w-full h-full object-cover hidden" controls autoplay muted></video>
+                    </div>
+                </div>
+
+                <div class="relative">
+                    <i class="fa-solid fa-crosshairs absolute left-3 top-2.5 text-gray-400 dark:text-gray-500 text-sm"></i>
+                    <input type="text" id="buscador-cctv" onkeyup="filtrarRadarCCTV(this.value)" 
+                           class="w-full bg-gray-50 dark:bg-[#121212] border border-gray-300 dark:border-gray-700 text-gray-800 dark:text-gray-300 text-xs rounded-md focus:ring-cyan-500 focus:border-cyan-500 block pl-9 p-2 font-console placeholder-gray-400 dark:placeholder-gray-600 outline-none transition-colors" 
+                           placeholder="Interceptar: Ubicación, Distrito, Proveedor, ID...">
+                </div>
+            </div>
+        </div>
+        <div id="lista-tarjetas-cctv" class="pl-3 pr-1 flex flex-col gap-2 p-3 pb-10 px-0 mt-2">
+            ${tarjetasHtml}
+        </div>
+        `;
+
+        let titleEl = document.getElementById("sidebar-title");
+        if (titleEl && titleEl.innerText === "LIVE CAMS") {
+            let listCont = document.getElementById("lista-tarjetas-cctv");
+            if (listCont) {
+                listCont.innerHTML = tarjetasHtml;
+            } else {
+                document.getElementById("sidebar-content").innerHTML = htmlListaCCTV;
+            }
+            setTimeout(() => { if (typeof activarMarqueesInteligentes === 'function') activarMarqueesInteligentes(); }, 100);
+        }
+
+        if (typeof layerState !== 'undefined' && layerState['LIVE_CAMS'] && typeof map !== 'undefined') {
+            map.addLayer(layerCCTV);
+        }
+
+        // ⚡ FIX TÁCTICO: Actualizar el badge del Toolbar apenas las cámaras aterrizan
+        const badgeCCTV = document.getElementById('tb-cctv');
+        if (badgeCCTV) { badgeCCTV.innerText = dataCCTVGlobal ? dataCCTVGlobal.length : 0; }
+    } catch (error) {
+        console.error('Error al cargar cámaras:', error);
     }
-  } catch (error) {
-    console.error('Error al cargar cámaras:', error);
-    // Podrías mostrar un mensaje en la interfaz si lo deseas
-  }
 }
 
-  // 3. LÓGICA DE SELECCIÓN Y REPRODUCCIÓN
-  function seleccionarCamara(index, desdeMapa) {
-      let cam = dataCCTVGlobal[index];
-      if(!cam) return;
+// 3. LÓGICA DE SELECCIÓN Y REPRODUCCIÓN (SCROLL MATEMÁTICO + EFECTO RESPIRO)
+function seleccionarCamara(index, desdeMapa) {
+    let cam = dataCCTVGlobal[index];
+    if(!cam) return;
 
-      openCCTVSidebar(); // Asegura que el panel esté abierto
+    if (typeof openSidebar === 'function') {
+        openSidebar('LIVE CAMS');
+    }
 
-      // A) Actualizar Textos del Header
-      document.getElementById('cctv-ubicacion').innerText = cam.ubicacion;
-      document.getElementById('cctv-distrito').innerText = "DISTRITO: " + cam.distrito;
-      
-      // B) Cargar Video
-      reproducirVideoHLS(cam.url);
-      
-      // C) Si se hizo clic desde el panel, volar el mapa hacia la cámara
-      if(!desdeMapa && cam.lat && cam.lng) {
-          map.flyTo([parseFloat(cam.lat), parseFloat(cam.lng)], 16, { animate: true, duration: 1.5 });
-          triggerRadarPing(cam.lat, cam.lng, 'cyan'); // Efecto de radar en el mapa
-      }
+    setTimeout(() => {
+        const ubicacionEl = document.getElementById('cctv-ubicacion');
+        const distritoEl = document.getElementById('cctv-distrito');
+        const proveedorEl = document.getElementById('cctv-proveedor-header');
+        const pulseDot = document.getElementById('cctv-pulse-dot');
+        
+        if (ubicacionEl) ubicacionEl.innerText = cam.ubicacion || 'SIN UBICACIÓN';
+        if (distritoEl) distritoEl.innerText = "DISTRITO: " + (cam.distrito || 'NO DEFINIDO');
+        if (proveedorEl) proveedorEl.innerText = cam.proveedor || 'PROVEEDOR';
+        
+        if (typeof activarMarqueesInteligentes === 'function') activarMarqueesInteligentes();
+        
+        let urlVideo = cam.urlStream || cam.url; 
+        if (urlVideo && cam.estado !== 'INACTIVO') {
+            if (pulseDot) pulseDot.classList.add('animate-pulse');
+            reproducirVideoHLS(urlVideo);
+        } else {
+            if (pulseDot) pulseDot.classList.remove('animate-pulse');
+            let player = document.getElementById('cctv-player');
+            let ph = document.getElementById('cctv-placeholder');
+            if(player) player.classList.add('hidden');
+            if(ph) {
+                ph.classList.remove('hidden');
+                ph.innerText = "CÁMARA FUERA DE SERVICIO (INACTIVA)";
+            }
+            if(window.hlsPlayer) { window.hlsPlayer.destroy(); window.hlsPlayer = null; }
+        }
+        
+        let lat = parseFloat(cam.latitud || cam.lat || 0);
+        let lng = parseFloat(cam.longitud || cam.lng || 0);
+        
+        if(!desdeMapa && lat !== 0 && typeof map !== 'undefined') {
+            map.flyTo([lat, lng], 17, { animate: true, duration: 1.5 });
+            if (typeof triggerRadarPing === 'function') { triggerRadarPing(lat, lng, 'cyan'); }
+        }
 
-      // D) Efecto de Resalte de 7 Segundos (Pulso) en el Control
-      let itemId = 'cam-item-' + index;
-      let card = document.getElementById(itemId);
-      if(card) {
-          // Desplazar el scroll hacia el control suavemente
-          card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          
-          // Inyectar variables de color y clase del pulso
-          card.style.setProperty('--glow-c', 'rgba(6, 182, 212, 0.8)'); // Cyan
-          card.style.setProperty('--border-c', '#06b6d4');
-          card.classList.add('card-focus-active');
-          
-          setTimeout(() => { 
-              card.classList.remove('card-focus-active');
-              card.style.removeProperty('--glow-c');
-              card.style.removeProperty('--border-c');
-          }, 7000); // 7 segundos exactos
-      }
-  }
+        // ⚡ FIX TÁCTICO: CÁLCULO MATEMÁTICO DEL SCROLL PARA EVITAR LA CABECERA
+        let itemId = 'cam-item-' + index;
+        let card = document.getElementById(itemId);
+        
+        if(card) {
+            // Buscamos el contenedor general que tiene el scroll
+            let scrollContainer = document.getElementById('sidebar-content') || card.closest('.overflow-y-auto');
+            
+            if (scrollContainer) {
+                // Calculamos la altura real de la cabecera (Video + Buscador)
+                let header = scrollContainer.querySelector('.sticky');
+                let headerHeight = header ? header.offsetHeight : 340;
+                
+                // Calculamos la posición exacta usando las distancias relativas a la pantalla
+                let containerRect = scrollContainer.getBoundingClientRect();
+                let cardRect = card.getBoundingClientRect();
+                
+                // Scroll actual + distancia de la tarjeta - altura de la cabecera - 15px de margen visual
+                let targetScroll = scrollContainer.scrollTop + (cardRect.top - containerRect.top) - headerHeight - 15;
+                
+                scrollContainer.scrollTo({ top: targetScroll, behavior: 'smooth' });
+            } else {
+                card.scrollIntoView({ behavior: 'smooth', block: 'center' }); // Fallback por si acaso
+            }
+            
+            // ⚡ EFECTO "RESPIRO" CSS (Restaurado)
+            card.style.setProperty('--glow-c', 'rgba(6, 182, 212, 0.8)'); 
+            card.style.setProperty('--border-c', '#06b6d4');
+            card.classList.add('card-focus-active');
+            
+            // Apagado del respiro a los 4 segundos
+            setTimeout(() => { 
+                card.classList.remove('card-focus-active');
+                setTimeout(() => {
+                    card.style.removeProperty('--glow-c');
+                    card.style.removeProperty('--border-c');
+                }, 1000);
+            }, 4000); 
+        }
+    }, 50);
+}
 
-  // 4. MOTOR HLS (El reproductor)
-  function reproducirVideoHLS(url) {
-      let video = document.getElementById('cctv-player');
-      let loader = document.getElementById('cctv-loader');
-      let placeholder = document.getElementById('cctv-placeholder');
+// 4. MOTOR HLS (El reproductor)
+function reproducirVideoHLS(url) {
+    let video = document.getElementById('cctv-player');
+    let loader = document.getElementById('cctv-loader');
+    let placeholder = document.getElementById('cctv-placeholder');
+    
+    if (!video || !loader || !placeholder) return;
 
-      // Preparar interfaz
-      placeholder.classList.add('hidden');
-      video.classList.remove('hidden');
-      loader.classList.remove('hidden');
+    placeholder.classList.add('hidden');
+    video.classList.remove('hidden');
+    loader.classList.remove('hidden');
 
-      if (Hls.isSupported()) {
-          if (hlsPlayer) { hlsPlayer.destroy(); }
-          hlsPlayer = new Hls();
-          hlsPlayer.loadSource(url);
-          hlsPlayer.attachMedia(video);
-          
-          hlsPlayer.on(Hls.Events.MANIFEST_PARSED, function() {
-              video.play();
-              loader.classList.add('hidden');
-          });
-          
-          hlsPlayer.on(Hls.Events.ERROR, function (event, data) {
-              if (data.fatal) {
-                  loader.classList.add('hidden');
-                  placeholder.innerText = "ERROR EN TRANSMISIÓN (SEÑAL CAÍDA O RESTRINGIDA)";
-                  placeholder.classList.remove('hidden');
-                  video.classList.add('hidden');
-              }
-          });
-      }
-  }
+    if (typeof Hls !== 'undefined' && Hls.isSupported()) {
+        if (window.hlsPlayer) { window.hlsPlayer.destroy(); }
+        window.hlsPlayer = new Hls();
+        window.hlsPlayer.loadSource(url);
+        window.hlsPlayer.attachMedia(video);
+        
+        window.hlsPlayer.on(Hls.Events.MANIFEST_PARSED, function() {
+            video.play().catch(e => console.warn("Autoplay bloqueado:", e));
+            loader.classList.add('hidden');
+        });
+        
+        window.hlsPlayer.on(Hls.Events.ERROR, function (event, data) {
+            if (data.fatal) {
+                loader.classList.add('hidden');
+                placeholder.innerText = "ERROR EN TRANSMISIÓN (SEÑAL CAÍDA O RESTRINGIDA)";
+                placeholder.classList.remove('hidden');
+                video.classList.add('hidden');
+            }
+        });
+    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        video.src = url;
+        video.addEventListener('loadedmetadata', function() {
+            video.play();
+            loader.classList.add('hidden');
+        });
+    } else {
+        loader.classList.add('hidden');
+        placeholder.innerText = "NAVEGADOR NO SOPORTA EL FORMATO DE VIDEO";
+        placeholder.classList.remove('hidden');
+    }
+}
 
   // 5. MOTOR FULLSCREEN
   function toggleVideoFullScreen() {
       let videoEl = document.getElementById('cctv-player');
+      if (!videoEl) return;
+      
       if (!document.fullscreenElement) {
           if (videoEl.requestFullscreen) videoEl.requestFullscreen();
           else if (videoEl.webkitRequestFullscreen) videoEl.webkitRequestFullscreen();
@@ -2047,6 +2389,7 @@ function syncQuickButtons() {
           else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
       }
   }
+
 
 // ========== ISSE STUDIO ==========
 async function abrirISSE() {
@@ -3517,44 +3860,105 @@ function buildLayerPanel(counts) {
   }
 
 
-  function applyLayerFilters() {
-  markerGroup.clearLayers();
-  if (heatLayer) { map.removeLayer(heatLayer); heatLayer = null; }
-
-  let heatPoints = [];
-  allMarkers.forEach(item => {
-    if (layerState[item.layerId]) {
-      item.marker.addTo(markerGroup);
-      if (layerState['HEATMAP'] && item.layerId !== 'SEDES') {
-        let latlng = item.marker.getLatLng();
-        heatPoints.push([latlng.lat, latlng.lng, 1]);
-      }
+ /* ==========================================================
+   MOTOR METEOROLÓGICO: FLUJO DE VIENTO (GFS)
+   ========================================================== */
+window.toggleWindLayer = function() {
+    // La variable en la memoria global ya fue invertida por el botón (layerState['WIND_FLOW'])
+    
+    // Si se apaga, removemos del mapa
+    if (!layerState['WIND_FLOW']) {
+        if (windLayer && map.hasLayer(windLayer)) { 
+            map.removeLayer(windLayer); 
+        }
+        return;
     }
-  });
 
-  if (layerState['HEATMAP'] && heatPoints.length > 0) {
-    heatLayer = L.heatLayer(heatPoints, {
-      radius: 20,
-      blur: 25,
-      maxZoom: 10,
-      gradient: { 0.3: '#3b82f6', 0.5: '#22c55e', 0.7: '#eab308', 1.0: '#ef4444' }
-    }).addTo(map);
-  }
-  syncQuickButtons();
-}
+    // Si se enciende y ya estaba descargado, lo mostramos
+    if (windLayer) {
+        windLayer.addTo(map);
+        return;
+    }
 
-function syncQuickButtons() {
-  const groups = ['LIVE_CAMS', 'SEDES', 'SUTRAN', 'CGBVP', 'DICAPI', 'IGP', 'CECOM', 'HEATMAP', 'WIND_FLOW'];
-  groups.forEach(g => {
-    let btn = document.getElementById('btn-quick-' + g);
-    if (!btn) return;
-    let isActive = (g === 'LIVE_CAMS' || g === 'SEDES' || g === 'HEATMAP' || g === 'WIND_FLOW')
-      ? layerState[g]
-      : Object.keys(layerState).some(k => k.startsWith(g + '_') && layerState[k]);
-    btn.classList.toggle('opacity-30', !isActive);
-    btn.classList.toggle('grayscale', !isActive);
-  });
-}
+    // Si se enciende y NO estaba descargado, iniciamos la descarga GFS
+    if (isWindLoading) return;
+    isWindLoading = true;
+    
+    // Alerta visual de conexión satelital
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({ 
+            title: 'Conectando a Satélite...', 
+            text: 'Descargando malla vectorial GFS.', 
+            allowOutsideClick: false, 
+            showConfirmButton: false, 
+            timer: 1500, 
+            background: isDarkMode ? '#171717' : '#fff', 
+            color: isDarkMode ? '#fff' : '#000' 
+        });
+    }
+
+    // Crear un panel (capa de profundidad) específico para el viento si no existe
+    if (!map.getPane('windPane')) {
+        map.createPane('windPane');
+        map.getPane('windPane').style.zIndex = 250; 
+        map.getPane('windPane').style.pointerEvents = 'none'; 
+    }
+
+    // Descarga de la Malla Global de Vientos
+    fetch("https://onaci.github.io/leaflet-velocity/wind-global.json")
+        .then(response => response.json())
+        .then(data => {
+            windLayer = L.velocityLayer({
+                pane: 'windPane',       
+                displayValues: true,
+                displayOptions: { 
+                    velocityType: 'Viento Global', 
+                    position: 'bottomright', 
+                    emptyString: 'Sin datos', 
+                    speedUnit: 'm/s' 
+                },
+                data: data, 
+                maxVelocity: 15, 
+                lineWidth: 2.5, 
+                velocityScale: 0.004, 
+                particleAge: 45, 
+                particleMultiplier: 1 / 4000, 
+                colorScale: [ 
+                    "rgba(255, 255, 255, 0.85)", 
+                    "rgba(224, 242, 254, 0.85)", 
+                    "rgba(186, 230, 253, 0.90)", 
+                    "rgba(253, 230, 138, 0.90)", 
+                    "rgba(252, 165, 165, 0.95)" 
+                ]
+            });
+            
+            isWindLoading = false;
+            
+            // Verificamos de nuevo la memoria por si el usuario lo apagó mientras descargaba
+            if (layerState['WIND_FLOW']) {
+                windLayer.addTo(map);
+            }
+        })
+        .catch(err => {
+            console.error("Error GFS:", err);
+            isWindLoading = false;
+            layerState['WIND_FLOW'] = false;
+            
+            // Forzar apagado del botón en la interfaz si falló la red
+            let windBtn = document.querySelector('button[onclick*="WIND_FLOW"]');
+            if(windBtn) windBtn.classList.remove('active');
+
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({ 
+                    icon: 'error', 
+                    title: 'Error de Telemetría', 
+                    text: 'Conexión GFS rechazada o sin internet.', 
+                    background: isDarkMode ? '#171717' : '#fff', 
+                    color: isDarkMode ? '#fff' : '#000' 
+                });
+            }
+        });
+};
 
 function forceMapRepaint() {
   setTimeout(() => {
@@ -3819,4 +4223,137 @@ window.activarMarqueesInteligentes = function() {
             textoEl.classList.add('truncate');
         }
     });
+};
+
+
+/* =================================================================
+   MOTOR DEL TOOLBAR TÁCTICO (CAPAS Y HERRAMIENTAS)
+   ================================================================= */
+
+// 1. Control de Apertura/Cierre del Panel
+let isToolbarOpen = false;
+window.toggleSamToolbar = function() {
+    const tb = document.getElementById('sam-toolbar-container');
+    const tab = document.getElementById('sam-toolbar-tab');
+    if (isToolbarOpen) {
+        tb.classList.add('-translate-y-full');
+        tab.classList.remove('opacity-0', 'pointer-events-none');
+    } else {
+        tb.classList.remove('-translate-y-full');
+        tab.classList.add('opacity-0', 'pointer-events-none');
+    }
+    isToolbarOpen = !isToolbarOpen;
+};
+
+// 2. Control de Pantalla Completa
+window.toggleMapFullScreen = function() {
+    if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen();
+    } else {
+        if (document.exitFullscreen) document.exitFullscreen();
+    }
+};
+
+// 3. Control Principal de Capas
+window.toggleToolbarLayer = function(layerId, btnElement) {
+    // Alternar clase visual del botón
+    btnElement.classList.toggle('active');
+    let isActive = btnElement.classList.contains('active');
+
+    // ⚡ FIX FATAL: Guardar en la Memoria Global para que sobreviva al Refresh (1 min)
+    if (typeof layerState !== 'undefined') {
+        layerState[layerId] = isActive;
+    }
+
+    // Casos Especiales (Cámaras, Viento)
+    if (layerId === 'LIVE_CAMS') {
+        if (isActive) map.addLayer(layerCCTV); else map.removeLayer(layerCCTV);
+        return;
+    }
+    if (layerId === 'WIND_FLOW') {
+        if (typeof toggleWindLayer === 'function') toggleWindLayer();
+        return;
+    }
+    
+    // ⚡ DIBUJADO TÁCTICO: applyLayerFilters() lee la memoria y redibuja TODO (incluido Heatmap)
+    if (typeof applyLayerFilters === 'function') {
+        applyLayerFilters();
+    }
+};
+
+// ==========================================================
+// MOTOR DEL TOOLBAR TÁCTICO: CONTADORES Y FILTROS
+// ==========================================================
+
+// 1. Actualizador Táctico de Contadores (FIX: Ahora recibe countsRef correctamente)
+window.actualizarContadoresToolbar = function(countsRef) {
+    let bCounts = {};
+    allMarkers.forEach(m => {
+        bCounts[m.layerId] = (bCounts[m.layerId] || 0) + 1;
+    });
+
+    const setBadge = (id, count) => {
+        let el = document.getElementById(id);
+        if (el) el.innerText = count || 0;
+    };
+
+    // CCTV y Sedes
+    setBadge('tb-cctv', typeof dataCCTVGlobal !== 'undefined' ? dataCCTVGlobal.length : 0);
+    setBadge('tb-sedes', bCounts['SEDES'] || 0);
+
+    // SUTRAN (Lectura segura de la referencia)
+    let sCounts = countsRef ? countsRef.sutran : {};
+    setBadge('tb-sutran-rojo', sCounts.interrumpido || 0);
+    setBadge('tb-sutran-ambar', sCounts.restringido || 0);
+    setBadge('tb-sutran-verde', sCounts.normal || 0);
+
+    // IGP
+    let iCounts = countsRef ? countsRef.igp : {};
+    setBadge('tb-igp-alto', iCounts.alto || 0);
+    setBadge('tb-igp-moderado', iCounts.moderado || 0);
+    setBadge('tb-igp-leve', iCounts.leve || 0);
+
+    // DICAPI (Corregido para coincidir con las etiquetas ROJO, AMBAR, VERDE)
+    let dCounts = countsRef ? countsRef.dicapi : {};
+    setBadge('tb-dicapi-cerrado', dCounts.cerrado || dCounts.rojo || 0);
+    setBadge('tb-dicapi-parcial', dCounts.parcial || dCounts.ambar || 0);
+    setBadge('tb-dicapi-abierto', dCounts.abierto || dCounts.verde || 0);
+
+    // BOMBEROS
+    setBadge('tb-bomb-incendio', bCounts['CGBVP_INCENDIO'] || 0);
+    setBadge('tb-bomb-matpel', bCounts['CGBVP_MATPEL'] || 0);
+    setBadge('tb-bomb-accveh', bCounts['CGBVP_ACCVEH'] || 0);
+    setBadge('tb-bomb-medica', bCounts['CGBVP_EMERGMED'] || 0);
+    setBadge('tb-bomb-rescate', bCounts['CGBVP_RESCATE'] || 0);
+    setBadge('tb-bomb-especial', bCounts['CGBVP_SERVESP'] || 0);
+    setBadge('tb-bomb-cerrado', bCounts['CGBVP_CERRADO'] || 0);
+};
+
+// 2. Única Función de Filtros (Elimine cualquier otra copia de applyLayerFilters)
+window.applyLayerFilters = function() {
+    markerGroup.clearLayers();
+    if (heatLayer) { map.removeLayer(heatLayer); heatLayer = null; }
+    
+    let heatPoints = []; 
+
+    allMarkers.forEach(item => {
+        if (layerState[item.layerId]) {
+            item.marker.addTo(markerGroup);
+            
+            // El mapa de calor se nutre de todas las capas activas (menos sedes)
+            if (layerState['HEATMAP'] && item.layerId !== 'SEDES') {
+                let latlng = item.marker.getLatLng();
+                heatPoints.push([latlng.lat, latlng.lng, 1]); 
+            }
+        }
+    });
+
+    if (layerState['HEATMAP'] && heatPoints.length > 0) {
+        try {
+            heatLayer = L.heatLayer(heatPoints, {
+                radius: 20, blur: 25, maxZoom: 10,
+                gradient: { 0.3: '#3b82f6', 0.5: '#22c55e', 0.7: '#eab308', 1.0: '#ef4444' }
+            }).addTo(map);
+        } catch(e) { console.error("Error Heatmap:", e); }
+    }
 };

@@ -134,7 +134,7 @@ const syncIgp = async () => {
 
     // 4. Mantener solo los últimos 50 sismos (por fechaHora descendente)
     const total = await IgpAlert.countDocuments();
-    const MAX_REGISTROS = 50;
+    const MAX_REGISTROS = 25;
     if (total > MAX_REGISTROS) {
       const excedentes = total - MAX_REGISTROS;
       // Conservar los 50 más recientes (orden descendente por fechaHora)

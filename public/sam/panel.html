@@ -50,6 +50,7 @@
 
   <div id="map" class="absolute inset-0 z-0"></div>
   
+  <!-- TOPBAR -->
   <nav class="absolute top-0 left-0 right-0 w-full z-10 glass-nav px-4 py-2 flex justify-between items-center transition-colors duration-300 z-[500]">
     
     <div class="flex items-center gap-2 md:gap-3 w-1/3">
@@ -95,41 +96,66 @@
     </button>
 </div>
   </nav>
+<div id="sam-toolbar-container" class="absolute top-[52px] md:top-[65px] left-0 right-0 w-full z-[490] transition-transform duration-400 -translate-y-full pointer-events-none">
+    
+    <div class="glass-nav w-full flex items-center px-3 py-1.5 gap-1.5 overflow-x-auto hud-scrollbar border-t border-b border-gray-200/50 dark:border-neutral-800/50 shadow-md pointer-events-auto">
+        
+        <button onclick="if(map) map.zoomIn()" class="toolbar-btn" title="Acercar Mapa"><i class="fa-solid fa-plus"></i></button>
+        <button onclick="if(map) map.zoomOut()" class="toolbar-btn" title="Alejar Mapa"><i class="fa-solid fa-minus"></i></button>
+        <button onclick="toggleMapFullScreen()" class="toolbar-btn" title="Pantalla Completa"><i class="fa-solid fa-expand"></i></button>
+        
+        <div class="w-px h-5 bg-gray-300 dark:bg-gray-700 shrink-0 mx-1 md:mx-2"></div>
 
-  <div id="tactical-toolbar-wrapper" class="absolute top-[55px] lg:top-[65px] left-1/2 transform -translate-x-1/2 z-[400] flex flex-col items-center pointer-events-none">
-      
-      <button id="btn-toolbar-trigger" onclick="toggleTacticalToolbar(event)" class="bg-white/90 dark:bg-[#1a1a1a]/90 backdrop-blur-sm border border-t-0 border-gray-200 dark:border-neutral-800 text-gray-600 dark:text-gray-400 px-6 py-1 rounded-b-xl shadow-lg hover:text-blue-500 hover:bg-white dark:hover:bg-[#1f1f1f] transition-all text-[9px] font-console uppercase tracking-widest flex items-center gap-1.5 pointer-events-auto group">
-          <i class="fa-solid fa-toolbox group-hover:scale-110 transition-transform"></i> Tools
-      </button>
+        <button onclick="abrirMatrixNuevaPestana()" class="toolbar-btn text-cyan-500 hover:text-cyan-400" title="Videowall CCTV"><i class="fa-solid fa-border-all"></i></button>
+        <button onclick="toggleToolbarLayer('HEATMAP', this)" class="toolbar-btn layer-btn" title="Mapa de Calor"><i class="fa-solid fa-fire-flame-curved text-orange-500"></i></button>
+        <button onclick="toggleToolbarLayer('WIND_FLOW', this)" class="toolbar-btn layer-btn" title="Flujo de Viento"><i class="fa-solid fa-wind text-gray-400"></i></button>
+        <button onclick="toggleToolbarLayer('SEDES', this)" class="toolbar-btn layer-btn" title="Sedes SAM"><i class="fa-solid fa-building text-indigo-500"></i><span id="tb-sedes" class="toolbar-badge">0</span></button>
 
-      <div id="tactical-toolbar" class="hidden mt-1 bg-white/95 dark:bg-[#1a1a1a]/95 backdrop-blur-md border border-gray-200 dark:border-neutral-800 rounded-md shadow-[0_10px_25px_rgba(0,0,0,0.5)] p-1 transition-all pointer-events-auto overflow-hidden">
-          
-          <div class="grid grid-cols-[repeat(7,minmax(0,1fr))] lg:grid-cols-[repeat(14,minmax(0,1fr))] gap-0.5 md:gap-1 items-center">
-              
-              <button onclick="if(map) map.zoomIn()" class="w-[38px] md:w-[40px] h-[36px] flex items-center justify-center text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#3f3f3f] rounded transition-colors" title="Acercar"><i class="fa-solid fa-plus text-[14px] md:text-[15px]"></i></button>
-              <button onclick="if(map) map.zoomOut()" class="w-[38px] md:w-[40px] h-[36px] flex items-center justify-center text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#3f3f3f] rounded transition-colors" title="Alejar"><i class="fa-solid fa-minus text-[14px] md:text-[15px]"></i></button>
-              <button onclick="toggleFullScreen()" class="w-[38px] md:w-[40px] h-[36px] flex items-center justify-center text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#3f3f3f] rounded transition-colors" title="Pantalla Completa"><i id="icon-fullscreen" class="fa-solid fa-expand text-[14px] md:text-[15px]"></i></button>
-              <button onclick="toggleLayerPanel()" class="w-[38px] md:w-[40px] h-[36px] flex items-center justify-center text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#3f3f3f] rounded transition-colors" title="Ver Capas / Leyenda"><i class="fa-solid fa-layer-group text-[14px] md:text-[15px]"></i></button>
-              <button onclick="abrirMatrixNuevaPestana()" class="w-[38px] md:w-[40px] h-[36px] flex items-center justify-center text-cyan-600 dark:text-cyan-500 hover:bg-cyan-50 dark:hover:bg-cyan-500/10 rounded transition-colors" title="Video Wall CCTV"><i class="fa-solid fa-border-all text-[14px] md:text-[15px]"></i></button>
-              
-              <button id="btn-quick-LIVE_CAMS" onclick="quickToggleGroup('LIVE_CAMS')" class="w-[38px] md:w-[40px] h-[36px] flex items-center justify-center hover:bg-gray-100 dark:hover:bg-[#3f3f3f] rounded transition-colors" title="CCTV"><i class="fa-solid fa-video text-[14px] md:text-[15px]"></i></button>
-              <button id="btn-quick-SEDES" onclick="quickToggleGroup('SEDES')" class="w-[38px] md:w-[40px] h-[36px] flex items-center justify-center hover:bg-gray-100 dark:hover:bg-[#3f3f3f] rounded transition-colors" title="Instalaciones"><i class="fa-solid fa-warehouse text-[14px] md:text-[15px]"></i></button>
-              <button id="btn-quick-SUTRAN" onclick="quickToggleGroup('SUTRAN')" class="w-[38px] md:w-[40px] h-[36px] flex items-center justify-center hover:bg-gray-100 dark:hover:bg-[#3f3f3f] rounded transition-colors" title="SUTRAN"><i class="fa-solid fa-road-barrier text-[14px] md:text-[15px]"></i></button>
-              
-              <button id="btn-quick-CGBVP" onclick="quickToggleGroup('CGBVP')" class="w-[38px] md:w-[40px] h-[36px] flex items-center justify-center hover:bg-gray-100 dark:hover:bg-[#3f3f3f] rounded transition-colors" title="Bomberos"><i class="fa-solid fa-fire text-[14px] md:text-[15px]"></i></button>
-              <button id="btn-quick-DICAPI" onclick="quickToggleGroup('DICAPI')" class="w-[38px] md:w-[40px] h-[36px] flex items-center justify-center hover:bg-gray-100 dark:hover:bg-[#3f3f3f] rounded transition-colors" title="Puertos"><i class="fa-solid fa-anchor text-[14px] md:text-[15px]"></i></button>
-              <button id="btn-quick-IGP" onclick="quickToggleGroup('IGP')" class="w-[38px] md:w-[40px] h-[36px] flex items-center justify-center hover:bg-gray-100 dark:hover:bg-[#3f3f3f] rounded transition-colors" title="Sismos"><i class="fa-solid fa-hill-rockslide text-[14px] md:text-[15px]"></i></button>
-              <button id="btn-quick-CECOM" onclick="quickToggleGroup('SAM')" class="w-[38px] md:w-[40px] h-[36px] flex items-center justify-center hover:bg-gray-100 dark:hover:bg-[#3f3f3f] rounded transition-colors" title="SAM"><i class="fa-solid fa-satellite-dish text-[14px] md:text-[15px]"></i></button>
-              <button id="btn-quick-HEATMAP" onclick="quickToggleGroup('HEATMAP')" class="w-[38px] md:w-[40px] h-[36px] flex items-center justify-center hover:bg-gray-100 dark:hover:bg-[#3f3f3f] rounded transition-colors" title="Mapa de Calor"><i class="fa-solid fa-fire-flame-curved text-[14px] md:text-[15px]"></i></button>
-              <button id="btn-quick-WIND_FLOW" onclick="quickToggleGroup('WIND_FLOW')" class="w-[38px] md:w-[40px] h-[36px] flex items-center justify-center hover:bg-gray-100 dark:hover:bg-[#3f3f3f] rounded transition-colors" title="Flujo de Viento"><i class="fa-solid fa-wind text-[14px] md:text-[15px]"></i></button>
-              
-          </div>
-      </div>
-  </div>
+        <div class="w-px h-5 bg-gray-300 dark:bg-gray-700 shrink-0 mx-1 md:mx-2"></div>
 
-  <div id="layer-control" class="absolute top-[100px] left-[60px] z-[400] glass-card rounded-md shadow-lg text-gray-900 dark:text-white w-56 transition-all duration-300 overflow-hidden border border-gray-200 dark:border-neutral-800 hidden">
-     <div id="layer-content" class="p-3 max-h-[60vh] overflow-y-auto"></div>
-  </div>
+        <button onclick="toggleToolbarLayer('LIVE_CAMS', this)" class="toolbar-btn layer-btn active" title="Cámaras CCTV">
+            <i class="fa-solid fa-video text-cyan-500"></i><span id="tb-cctv" class="toolbar-badge">0</span>
+        </button>
+
+        <div class="w-px h-5 bg-gray-300 dark:bg-gray-700 shrink-0 mx-1 md:mx-2"></div>
+
+        <button onclick="toggleToolbarLayer('SUTRAN_INTERRUMPIDO', this)" class="toolbar-btn layer-btn active" title="Sutran: Interrumpido"><i class="fa-solid fa-road-barrier text-red-500"></i><span id="tb-sutran-rojo" class="toolbar-badge">0</span></button>
+        <button onclick="toggleToolbarLayer('SUTRAN_RESTRINGIDO', this)" class="toolbar-btn layer-btn active" title="Sutran: Restringido"><i class="fa-solid fa-road-barrier text-amber-500"></i><span id="tb-sutran-ambar" class="toolbar-badge">0</span></button>
+        <button onclick="toggleToolbarLayer('SUTRAN_NORMAL', this)" class="toolbar-btn layer-btn" title="Sutran: Vía Libre"><i class="fa-solid fa-road-barrier text-green-500"></i><span id="tb-sutran-verde" class="toolbar-badge">0</span></button>
+
+        <div class="w-px h-5 bg-gray-300 dark:bg-gray-700 shrink-0 mx-1 md:mx-2"></div>
+
+        <button onclick="toggleToolbarLayer('CGBVP_INCENDIO', this)" class="toolbar-btn layer-btn active" title="Bomberos: Incendio"><i class="fa-solid fa-fire text-red-500"></i><span id="tb-bomb-incendio" class="toolbar-badge">0</span></button>
+        <button onclick="toggleToolbarLayer('CGBVP_MATPEL', this)" class="toolbar-btn layer-btn active" title="Bomberos: Mat. Peligrosos"><i class="fa-solid fa-biohazard text-red-500"></i><span id="tb-bomb-matpel" class="toolbar-badge">0</span></button>
+        <button onclick="toggleToolbarLayer('CGBVP_ACCVEH', this)" class="toolbar-btn layer-btn active" title="Bomberos: Acc. Vehicular"><i class="fa-solid fa-car-burst text-red-500"></i><span id="tb-bomb-accveh" class="toolbar-badge">0</span></button>
+        <button onclick="toggleToolbarLayer('CGBVP_EMERGMED', this)" class="toolbar-btn layer-btn active" title="Bomberos: Emerg. Médica"><i class="fa-solid fa-truck-medical text-amber-500"></i><span id="tb-bomb-medica" class="toolbar-badge">0</span></button>
+        <button onclick="toggleToolbarLayer('CGBVP_RESCATE', this)" class="toolbar-btn layer-btn active" title="Bomberos: Rescate"><i class="fa-solid fa-life-ring text-amber-500"></i><span id="tb-bomb-rescate" class="toolbar-badge">0</span></button>
+        <button onclick="toggleToolbarLayer('CGBVP_SERVESP', this)" class="toolbar-btn layer-btn" title="Bomberos: Serv. Especial"><i class="fa-solid fa-triangle-exclamation text-amber-500"></i><span id="tb-bomb-especial" class="toolbar-badge">0</span></button>
+        <button onclick="toggleToolbarLayer('CGBVP_CERRADO', this)" class="toolbar-btn layer-btn" title="Bomberos: Cerrados"><i class="fa-solid fa-check text-green-500"></i><span id="tb-bomb-cerrado" class="toolbar-badge">0</span></button>
+
+        <div class="w-px h-5 bg-gray-300 dark:bg-gray-700 shrink-0 mx-1 md:mx-2"></div>
+
+        <button onclick="toggleToolbarLayer('IGP_ALTO', this)" class="toolbar-btn layer-btn active" title="Sismos: Riesgo Alto"><i class="fa-solid fa-hill-rockslide text-red-500"></i><span id="tb-igp-alto" class="toolbar-badge">0</span></button>
+        <button onclick="toggleToolbarLayer('IGP_MODERADO', this)" class="toolbar-btn layer-btn active" title="Sismos: Riesgo Moderado"><i class="fa-solid fa-hill-rockslide text-amber-500"></i><span id="tb-igp-moderado" class="toolbar-badge">0</span></button>
+        <button onclick="toggleToolbarLayer('IGP_LEVE', this)" class="toolbar-btn layer-btn active" title="Sismos: Riesgo Bajo"><i class="fa-solid fa-hill-rockslide text-green-500"></i><span id="tb-igp-leve" class="toolbar-badge">0</span></button>
+
+        <div class="w-px h-5 bg-gray-300 dark:bg-gray-700 shrink-0 mx-1 md:mx-2"></div>
+
+        <button onclick="toggleToolbarLayer('DICAPI_ROJO', this)" class="toolbar-btn layer-btn active" title="Puertos: Cierre Total"><i class="fa-solid fa-anchor text-red-500"></i><span id="tb-dicapi-cerrado" class="toolbar-badge">0</span></button>
+        <button onclick="toggleToolbarLayer('DICAPI_AMBAR', this)" class="toolbar-btn layer-btn active" title="Puertos: Cierre Parcial"><i class="fa-solid fa-anchor text-amber-500"></i><span id="tb-dicapi-parcial" class="toolbar-badge">0</span></button>
+        <button onclick="toggleToolbarLayer('DICAPI_VERDE', this)" class="toolbar-btn layer-btn active" title="Puertos: Abiertos"><i class="fa-solid fa-anchor text-green-500"></i><span id="tb-dicapi-abierto" class="toolbar-badge">0</span></button>
+
+        <div class="flex-1 min-w-[10px]"></div>
+
+        <button onclick="toggleSamToolbar()" class="toolbar-btn text-red-500 hover:text-red-400 hover:bg-red-500/10 shrink-0" title="Cerrar Toolbar">
+            <i class="fa-solid fa-chevron-up"></i>
+        </button>
+    </div>
+    
+    <div id="sam-toolbar-tab" onclick="toggleSamToolbar()" class="absolute left-1/2 -translate-x-1/2 bottom-[-18px] glass-nav px-8 py-1.5 rounded-b-lg border-t-0 border border-gray-200/50 dark:border-neutral-800/50 cursor-pointer text-gray-500 dark:text-gray-400 hover:text-cyan-500 transition-colors shadow-md pointer-events-auto flex items-center justify-center">
+        <i class="fa-solid fa-layer-group text-[10px]"></i>
+    </div>
+</div>
 
   <div id="map-dashboard-overlay" class="hidden absolute top-20 left-4 z-10 pointer-events-none">
     <div class="glass-card p-3 rounded-md shadow-lg pointer-events-auto flex flex-col gap-2 font-console w-64">
@@ -149,6 +175,7 @@
     </div>
   </div>
 
+  <!--Panel HUD Cards--> 
   <div id="cards-hud" class="absolute top-[60vh] md:top-auto bottom-8 left-[10px] right-[10px] md:left-4 md:right-4 z-[400] flex flex-col md:grid md:grid-cols-4 md:grid-rows-1 gap-3 overflow-y-auto overflow-x-hidden md:overflow-visible items-stretch pointer-events-none pb-2 hud-scrollbar pr-1">
 
     <div onclick="openSidebar('ALERTAS SUTRAN')" class="glass-card bg-white/95 dark:bg-[#121212]/95 backdrop-blur-sm w-full shrink-0 md:w-auto md:col-start-1 md:row-start-1 pointer-events-auto rounded-md shadow-lg p-3 border border-gray-200 dark:border-neutral-800 flex flex-col hover:border-cyan-500/50 transition-all cursor-pointer relative overflow-hidden group min-h-[90px]">
@@ -164,9 +191,10 @@
       
       <div class="flex w-full flex-1 relative z-10 mt-1">
         <div class="w-[35%] flex flex-col justify-end border-r border-gray-200 dark:border-neutral-800 pr-2">
-          <span id="hud-sutran-count" class="text-[36px] font-bold text-cyan-500 font-console leading-none block">0</span>
-          <span id="hud-sutran-total" class="text-[8px] text-gray-500 dark:text-gray-400 font-sans tracking-widest uppercase block mt-1">/ TOTALES</span>
-        </div>
+  <span id="hud-sutran-count" class="text-[36px] font-bold text-cyan-500 font-console leading-none block">0</span>
+  <span class="text-[9px] text-cyan-500 font-regular uppercase tracking-wide block mt-1 leading-none">Bloqueos de ruta</span>
+  <span id="hud-sutran-total" class="text-[8px] text-gray-500 dark:text-gray-400 font-sans tracking-widest uppercase block mt-1.5">/ TOTALES</span>
+</div>
         <div class="w-[65%] pl-3 flex flex-col justify-end items-end text-right" id="hud-sutran-last">
            <span class="text-gray-600 dark:text-gray-400 text-[9px]">Sin alertas recientes.</span>
         </div>
@@ -186,9 +214,10 @@
       
       <div class="flex w-full flex-1 relative z-10 mt-1">
         <div class="w-[35%] flex flex-col justify-end border-r border-gray-200 dark:border-neutral-800 pr-2">
-          <span id="hud-cgbvp-count" class="text-[36px] font-bold text-red-500 font-console leading-none block">0</span>
-          <span id="hud-cgbvp-total" class="text-[8px] text-gray-500 dark:text-gray-400 font-sans tracking-widest uppercase block mt-1">/ TOTALES</span>
-        </div>
+  <span id="hud-cgbvp-count" class="text-[36px] font-bold text-red-500 font-console leading-none block">0</span>
+  <span class="text-[9px] text-red-500 font-regular uppercase tracking-wide block mt-1 leading-none">Alertas en atención</span>
+  <span id="hud-cgbvp-total" class="text-[8px] text-gray-500 dark:text-gray-400 font-sans tracking-widest uppercase block mt-1.5">/ TOTALES</span>
+</div>
         <div class="w-[65%] pl-3 flex flex-col justify-end items-end text-right" id="hud-cgbvp-last">
            <span class="text-gray-600 dark:text-gray-400 text-[9px]">Sin alertas recientes.</span>
         </div>
@@ -208,9 +237,13 @@
       
       <div class="flex w-full flex-1 relative z-10 mt-1">
         <div class="w-[35%] flex flex-col justify-end border-r border-gray-200 dark:border-neutral-800 pr-2">
-          <span id="hud-igp-mag" class="text-[36px] font-bold text-green-500 font-console leading-none block">0.0</span>
-          <span id="hud-igp-total" class="text-[8px] text-gray-500 dark:text-gray-400 font-sans tracking-widest uppercase block mt-1">/ RECIENTE</span>
-        </div>
+  <div class="flex items-baseline gap-0.5">
+     <span id="hud-igp-mag" class="text-[36px] font-bold text-green-500 font-console leading-none block">0.0</span>
+     <span id="hud-igp-m" class="text-[16px] font-bold text-green-500 font-console lowercase">m</span>
+  </div>
+  <span id="hud-igp-legend" class="text-[9px] text-green-500 font-regular uppercase tracking-wide block mt-1 leading-none">Magnitud</span>
+  <span id="hud-igp-total" class="text-[8px] text-gray-500 dark:text-gray-400 font-sans tracking-widest uppercase block mt-1.5">/ RECIENTE</span>
+</div>
         <div class="w-[65%] pl-3 flex flex-col justify-end items-end text-right" id="hud-igp-last">
            <span class="text-gray-600 dark:text-gray-400 text-[9px]">Sin alertas recientes.</span>
         </div>
@@ -230,9 +263,10 @@
       
       <div class="flex w-full flex-1 relative z-10 mt-1">
         <div class="w-[35%] flex flex-col justify-end border-r border-gray-200 dark:border-neutral-800 pr-2">
-          <span id="dicapi-count" class="text-[36px] font-bold text-blue-500 font-console leading-none block">0</span>
-          <span class="text-[8px] text-gray-500 dark:text-gray-400 font-sans tracking-widest uppercase block mt-1">/ <span id="dicapi-total">--</span> TOTALES</span>
-        </div>
+  <span id="dicapi-count" class="text-[36px] font-bold text-blue-500 font-console leading-none block">0</span>
+  <span class="text-[9px] text-blue-500 font-regular uppercase tracking-wide block mt-1 leading-none">Puertos cerrados</span>
+  <span class="text-[8px] text-gray-500 dark:text-gray-400 font-sans tracking-widest uppercase block mt-1.5">/ <span id="dicapi-total">--</span> TOTALES</span>
+</div>
         <div class="w-[65%] pl-3 flex flex-col justify-end items-end text-right" id="hud-dicapi-last">
            <span class="text-gray-600 dark:text-gray-400 text-[9px]" id="dicapi-last-port">Sincronizando...</span>
         </div>
@@ -300,40 +334,6 @@
       </div>
     </div>
   </aside>
-
-  <div id="sidebar-cctv" class="sidebar-closed fixed top-0 right-0 w-full md:w-[420px] h-full bg-white dark:bg-[#121212] border-l border-gray-200 dark:border-neutral-800 transform translate-x-full transition-transform duration-300 z-[515] flex flex-col font-sans">
-        
-        <div class="p-3 border-b border-gray-200 dark:border-neutral-800 flex justify-between items-center bg-gray-50/80 dark:bg-[#0f0f0f]/80 backdrop-blur">
-            <h2 class="font-console font-bold text-cyan-600 dark:text-cyan-400 uppercase tracking-widest text-sm flex items-center gap-2">
-                <i class="fa-solid fa-video animate-pulse"></i> LIVE CAMS
-            </h2>
-            <button onclick="closeCCTVSidebar()" class="w-7 h-7 rounded bg-gray-200 dark:bg-neutral-800 hover:bg-gray-300 dark:hover:bg-neutral-700 flex items-center justify-center text-gray-600 dark:text-gray-400 transition-colors focus:outline-none">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
-        </div>
-        
-        <div class="p-4 bg-white dark:bg-[#121212] border-b border-gray-200 dark:border-neutral-800 z-10 shadow-md flex-shrink-0">
-            <div class="relative w-full aspect-video bg-black rounded border border-gray-300 dark:border-neutral-800 flex items-center justify-center overflow-hidden shadow-inner group">
-                <div id="cctv-placeholder" class="text-neutral-500 text-[10px] font-console uppercase text-center px-4">
-                    ESPERANDO SELECTOR DE TRANSMISIÓN...
-                </div>
-                <span id="cctv-loader" class="absolute text-cyan-500 text-2xl hidden z-10"><i class="fa-solid fa-spinner fa-spin"></i></span>
-                <video id="cctv-player" ondblclick="toggleVideoFullScreen()" class="w-full h-full object-cover cursor-pointer hidden" autoplay muted playsinline></video>
-                
-                <button onclick="toggleVideoFullScreen()" class="absolute bottom-2 right-2 bg-black/60 border border-neutral-600 hover:bg-cyan-600 hover:border-cyan-400 text-white w-7 h-7 rounded flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all z-20 backdrop-blur-sm" title="Pantalla Completa (Doble Clic)">
-                    <i class="fa-solid fa-expand text-[11px]"></i>
-                </button>
-            </div>
-            
-            <div class="mt-3 bg-gray-50 dark:bg-[#1a1a1a] p-2 rounded border border-gray-200 dark:border-neutral-800">
-                <div id="cctv-ubicacion" class="text-cyan-600 dark:text-cyan-400 font-bold text-[13px] uppercase truncate">STANDBY</div>
-                <div id="cctv-distrito" class="text-gray-500 text-[10px] font-console uppercase mt-1">SISTEMA EN ESPERA</div>
-            </div>
-        </div>
-
-        <div class="flex-1 overflow-y-auto p-3 custom-scrollbar bg-gray-100 dark:bg-[#0a0a0a]" id="cctv-list">
-            </div>
-    </div>
   
   <div id="sidebar-overlay" class="fixed inset-0 bg-transparent pointer-events-none z-[490] hidden transition-opacity"></div>
   <div id="login-modal" class="hidden fixed inset-0 z-[9999] bg-black/80 backdrop-blur-sm flex items-center justify-center transition-opacity">
@@ -532,6 +532,120 @@
                     </div>
                 </div>
                 
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Captura IGP -->
+<div id="modal-captura-igp" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm hidden transition-opacity">
+    <div class="bg-gray-50 dark:bg-[#121212] w-full h-full md:h-auto md:max-w-md md:rounded-xl shadow-2xl flex flex-col overflow-hidden transform transition-transform scale-95 border border-gray-300 dark:border-gray-700">
+        
+        <div id="modal-igp-header" class="px-4 py-3 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center bg-white dark:bg-[#1a1a1a]">
+            <h3 class="font-bold text-gray-800 dark:text-gray-200 text-xs tracking-widest uppercase flex items-center gap-2">
+                <i id="modal-igp-icon" class="fa-solid fa-hill-rockslide text-green-500"></i>
+                <span>REPORTE SÍSMICO IGP</span>
+            </h3>
+            <button onclick="cerrarModalIgp()" class="text-gray-400 hover:text-green-500 transition-colors w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto">
+            <div id="minimapa-igp" class="w-full h-48 md:h-56 bg-gray-300 dark:bg-gray-800 relative z-0"></div>
+            
+            <div class="p-4 space-y-3 relative z-10 bg-white dark:bg-[#121212]">
+                <div>
+                    <p class="text-[9px] text-gray-500 font-console tracking-widest uppercase">Epicentro / Referencia</p>
+                    <p id="modal-igp-ref" class="text-sm font-extrabold text-gray-900 dark:text-white uppercase leading-tight mt-1"></p>
+                </div>
+                
+                <div class="bg-gray-100 dark:bg-[#1a1a1a] rounded-lg p-3 border border-gray-200 dark:border-gray-800 flex items-center justify-between">
+                    <div>
+                        <p class="text-[9px] text-gray-500 font-console tracking-widest uppercase mb-1">Magnitud (M)</p>
+                        <p id="modal-igp-mag" class="text-2xl font-bold text-gray-800 dark:text-gray-200 font-console leading-none"></p>
+                    </div>
+                    <div id="modal-igp-badge-container"></div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 mt-2">
+                    <div>
+                        <p class="text-[9px] text-gray-500 font-console tracking-widest uppercase">Fecha y Hora</p>
+                        <p id="modal-igp-fecha" class="text-xs font-bold text-gray-800 dark:text-gray-300 font-console mt-0.5"></p>
+                    </div>
+                    <div>
+                        <p class="text-[9px] text-gray-500 font-console tracking-widest uppercase">Profundidad</p>
+                        <p id="modal-igp-prof" class="text-xs font-bold text-gray-800 dark:text-gray-300 font-console mt-0.5"></p>
+                    </div>
+                    <div>
+                        <p class="text-[9px] text-gray-500 font-console tracking-widest uppercase">Intensidad Máxima</p>
+                        <p id="modal-igp-int" class="text-xs font-bold text-gray-800 dark:text-gray-300 font-console mt-0.5"></p>
+                    </div>
+                    <div>
+                        <p class="text-[9px] text-gray-500 font-console tracking-widest uppercase">Coordenadas</p>
+                        <p id="modal-igp-coords" class="text-xs font-bold text-green-600 dark:text-green-500 font-console mt-0.5"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Captura PUERTO -->
+
+<div id="modal-captura-dicapi" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm hidden transition-opacity">
+    <div class="bg-gray-50 dark:bg-[#121212] w-full h-full md:h-auto md:max-w-md md:rounded-xl shadow-2xl flex flex-col overflow-hidden transform transition-transform scale-95 border border-gray-300 dark:border-gray-700">
+        
+        <div id="modal-dicapi-header" class="px-4 py-3 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center bg-white dark:bg-[#1a1a1a]">
+            <h3 class="font-bold text-gray-800 dark:text-gray-200 text-xs tracking-widest uppercase flex items-center gap-2">
+                <i id="modal-dicapi-icon" class="fa-solid fa-anchor text-blue-500"></i>
+                <span>ESTADO DE PUERTO</span>
+            </h3>
+            <button onclick="cerrarModalDicapi()" class="text-gray-400 hover:text-blue-500 transition-colors w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto">
+            <div id="minimapa-dicapi" class="w-full h-48 md:h-56 bg-gray-300 dark:bg-gray-800 relative z-0"></div>
+            
+            <div class="p-4 space-y-3 relative z-10 bg-white dark:bg-[#121212]">
+                
+                <div>
+                    <p class="text-[9px] text-gray-500 font-console tracking-widest uppercase">Nombre del Puerto / Caleta</p>
+                    <p id="modal-dicapi-puerto" class="text-sm font-extrabold text-gray-900 dark:text-white uppercase leading-tight mt-1"></p>
+                </div>
+                
+                <div class="bg-gray-100 dark:bg-[#1a1a1a] rounded-lg p-3 border border-gray-200 dark:border-gray-800 flex items-center justify-between mt-2">
+                    <div>
+                        <p class="text-[9px] text-gray-500 font-console tracking-widest uppercase mb-1">Estado Operativo</p>
+                        <p id="modal-dicapi-estado-texto" class="text-lg font-bold font-console leading-none"></p>
+                    </div>
+                    <div id="modal-dicapi-badge-container"></div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 mt-3">
+                    <div>
+                        <p class="text-[9px] text-gray-500 font-console tracking-widest uppercase">Capitanía</p>
+                        <p id="modal-dicapi-cap" class="text-xs font-bold text-gray-800 dark:text-gray-300 font-console mt-0.5 flex items-center gap-1"><i class="fa-solid fa-building-flag text-blue-500/70"></i> <span id="modal-dicapi-cap-val"></span></p>
+                    </div>
+                    <div>
+                        <p class="text-[9px] text-gray-500 font-console tracking-widest uppercase">Última Actualización</p>
+                        <p id="modal-dicapi-fecha" class="text-xs font-bold text-gray-800 dark:text-gray-300 font-console mt-0.5"></p>
+                    </div>
+                    <div>
+                        <p class="text-[9px] text-gray-500 font-console tracking-widest uppercase">Nivel</p>
+                        <p id="modal-dicapi-nivel" class="text-xs font-bold text-gray-800 dark:text-gray-300 font-console mt-0.5"></p>
+                    </div>
+                    <div>
+                        <p class="text-[9px] text-gray-500 font-console tracking-widest uppercase">Resolución MGP</p>
+                        <p id="modal-dicapi-res" class="text-[10px] font-bold text-gray-600 dark:text-gray-400 font-console mt-0.5 break-words"></p>
+                    </div>
+                    <div class="col-span-2">
+                        <p class="text-[9px] text-gray-500 font-console tracking-widest uppercase">Coordenadas</p>
+                        <p id="modal-dicapi-coords" class="text-xs font-bold text-blue-600 dark:text-blue-500 font-console mt-0.5"></p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
